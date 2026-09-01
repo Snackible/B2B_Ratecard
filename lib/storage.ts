@@ -4,7 +4,17 @@ import { randomUUID } from "node:crypto";
 import type { Item, RateCardMeta, RateCardSnapshot } from "./types";
 import { applyDiscount } from "./rows";
 
-const USE_BLOB = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+// A Blob store connected from another project (or a project with multiple stores)
+// can get an env var name like `<STORE_NAME>_BLOB_READ_WRITE_TOKEN` instead of the
+// plain default — so look for either rather than assuming the exact name.
+function resolveBlobToken(): string | undefined {
+  if (process.env.BLOB_READ_WRITE_TOKEN) return process.env.BLOB_READ_WRITE_TOKEN;
+  const match = Object.entries(process.env).find(([key]) => key.endsWith("_BLOB_READ_WRITE_TOKEN"));
+  return match?.[1];
+}
+
+const BLOB_TOKEN = resolveBlobToken();
+const USE_BLOB = Boolean(BLOB_TOKEN);
 
 const LOCAL_DIR = path.join(process.cwd(), "data");
 const LOCAL_CATALOG = path.join(LOCAL_DIR, "catalog.json");
@@ -31,7 +41,7 @@ async function writeJsonFile(file: string, data: unknown) {
 export async function getCatalog(): Promise<Item[]> {
   if (USE_BLOB) {
     const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "catalog.json", limit: 1 });
+    const { blobs } = await list({ prefix: "catalog.json", limit: 1, token: BLOB_TOKEN });
     if (blobs.length === 0) {
       const seed = await readJsonFile<Item[]>(LOCAL_SEED, []);
       await saveCatalog(seed);
@@ -55,6 +65,7 @@ export async function saveCatalog(items: Item[]): Promise<void> {
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json",
+      token: BLOB_TOKEN,
     });
     return;
   }
@@ -79,7 +90,7 @@ export async function removeItem(id: string): Promise<void> {
 export async function listRateCards(): Promise<RateCardMeta[]> {
   if (USE_BLOB) {
     const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1 });
+    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1, token: BLOB_TOKEN });
     if (blobs.length === 0) return [];
     const res = await fetch(blobs[0].url, { cache: "no-store" });
     const index = (await res.json()) as RateCardMeta[];
@@ -109,6 +120,7 @@ export async function saveRateCard(
       access: "public",
       addRandomSuffix: false,
       contentType: "image/jpeg",
+      token: BLOB_TOKEN,
     });
     imageUrl = imgResult.url;
 
@@ -118,9 +130,10 @@ export async function saveRateCard(
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json",
+      token: BLOB_TOKEN,
     });
 
-    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1 });
+    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1, token: BLOB_TOKEN });
     const index: RateCardMeta[] =
       blobs.length > 0 ? await (await fetch(blobs[0].url, { cache: "no-store" })).json() : [];
     const meta: RateCardMeta = {
@@ -139,6 +152,7 @@ export async function saveRateCard(
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json",
+      token: BLOB_TOKEN,
     });
     return meta;
   }
@@ -202,15 +216,17 @@ export async function updateRateCard(
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "image/jpeg",
+      token: BLOB_TOKEN,
     });
     await put(`ratecards/${id}.json`, JSON.stringify(fullSnapshot, null, 2), {
       access: "public",
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json",
+      token: BLOB_TOKEN,
     });
 
-    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1 });
+    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1, token: BLOB_TOKEN });
     const index: RateCardMeta[] =
       blobs.length > 0 ? await (await fetch(blobs[0].url, { cache: "no-store" })).json() : [];
     const nextIndex = index.map((m) => (m.id === id ? meta : m));
@@ -219,6 +235,7 @@ export async function updateRateCard(
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json",
+      token: BLOB_TOKEN,
     });
     return meta;
   }
@@ -236,7 +253,7 @@ export async function updateRateCard(
 export async function getRateCard(id: string): Promise<RateCardSnapshot | null> {
   if (USE_BLOB) {
     const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: `ratecards/${id}.json`, limit: 1 });
+    const { blobs } = await list({ prefix: `ratecards/${id}.json`, limit: 1, token: BLOB_TOKEN });
     if (blobs.length === 0) return null;
     const res = await fetch(blobs[0].url, { cache: "no-store" });
     return (await res.json()) as RateCardSnapshot;
