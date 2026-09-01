@@ -65,11 +65,15 @@ export default function AddItemModal({ onClose, onAdd, existingCategories, exist
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-[var(--panel-bg)] p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Add New Item</h2>
-          <button onClick={onClose} className="text-[var(--text-faint)] hover:text-[var(--text-secondary)]" aria-label="Close">
+          <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">Add New Item</h2>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-[var(--text-faint)] hover:bg-[var(--input-bg)] hover:text-[var(--text-secondary)]"
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
@@ -227,14 +231,14 @@ export default function AddItemModal({ onClose, onAdd, existingCategories, exist
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-[var(--input-border)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
+              className="rounded-md border border-[var(--input-border)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
+              className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
               {submitting ? "Adding..." : "Add Item"}
             </button>

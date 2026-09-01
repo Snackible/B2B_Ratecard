@@ -174,12 +174,12 @@ export default function Builder({
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
-      <div className="flex h-[70vh] flex-col overflow-hidden rounded-lg border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 lg:h-[calc(100vh-160px)]">
+      <div className="flex h-[70vh] flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm lg:h-[calc(100vh-160px)]">
         <div className="mb-3 flex shrink-0 items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Catalog</h2>
+          <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">Catalog</h2>
           <button
             onClick={() => setShowAddModal(true)}
-            className="rounded-md bg-[var(--secondary-accent)] px-2 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)]"
+            className="rounded-md bg-[var(--secondary-accent)] px-2.5 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
           >
             + Add Item
           </button>
@@ -195,15 +195,15 @@ export default function Builder({
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-4 rounded-lg border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4">
+        <div className="flex flex-wrap items-center gap-5 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
           <div>
-            <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">Discount</div>
+            <div className="mb-1.5 text-xs font-medium text-[var(--text-muted)]">Discount</div>
             <div className="flex gap-1">
               {DISCOUNT_OPTIONS.map((d) => (
                 <button
                   key={d}
                   onClick={() => setDiscountPercent(d)}
-                  className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
+                  className={`rounded-md border px-2.5 py-1 text-xs font-medium active:scale-[0.97] ${
                     discountPercent === d
                       ? "border-[var(--secondary-accent)] bg-[var(--secondary-accent)] text-[var(--secondary-fg)]"
                       : "border-[var(--input-border)] text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
@@ -215,13 +215,15 @@ export default function Builder({
             </div>
           </div>
 
+          <div className="h-8 w-px bg-[var(--panel-border)]" aria-hidden />
+
           <div className="flex items-center gap-2">
             <input
               type="text"
               placeholder="Client name"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              className="w-44 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              className="w-44 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
             />
             <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
               <input
@@ -234,19 +236,19 @@ export default function Builder({
             </label>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-3">
             {message && <span className="text-xs text-[var(--text-muted)]">{message}</span>}
             <button
               onClick={handleSaveAndDownload}
               disabled={busy}
-              className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
+              className="rounded-md bg-[var(--accent)] px-3.5 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
             >
               {busy ? "Saving..." : editId ? "Update & Download JPEG" : "Save & Download JPEG"}
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+        <div className="overflow-x-auto rounded-xl border border-[var(--panel-border)] shadow-sm">
           <RateCardPreview
             rows={selectedRows}
             discountPercent={discountPercent}

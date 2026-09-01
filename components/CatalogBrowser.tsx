@@ -47,13 +47,29 @@ export default function CatalogBrowser({ rows, selectedKeys, onToggle, onDeleteI
 
   return (
     <div className="flex h-full flex-col">
-      <input
-        type="text"
-        placeholder="Search products or categories..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mb-3 w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
-      />
+      <div className="relative mb-3 shrink-0">
+        <svg
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[var(--text-faint)]"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search products or categories..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] py-2 pr-3 pl-8 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
+        />
+      </div>
       <div className="flex-1 overflow-y-auto pr-1">
         {filtered ? (
           <ul className="space-y-1">
@@ -74,7 +90,7 @@ export default function CatalogBrowser({ rows, selectedKeys, onToggle, onDeleteI
         ) : (
           grouped.map((seg) => (
             <details key={seg.segment} open className="mb-2">
-              <summary className="cursor-pointer select-none rounded bg-[var(--input-bg)] px-2 py-1.5 text-sm font-semibold text-[var(--text-primary)]">
+              <summary className="flex cursor-pointer select-none items-center rounded-md bg-[var(--input-bg)] px-2 py-1.5 text-sm font-semibold tracking-tight text-[var(--text-primary)] hover:bg-[var(--panel-border)]/60">
                 {seg.segment}
               </summary>
               <div className="pl-2">
@@ -105,7 +121,7 @@ export default function CatalogBrowser({ rows, selectedKeys, onToggle, onDeleteI
                     <div key={sectionKey}>{categoryList}</div>
                   ) : (
                     <details key={sectionKey} className="mb-1 mt-1">
-                      <summary className="cursor-pointer select-none rounded bg-[var(--accent-soft-bg)] px-2 py-1 text-sm font-medium text-[var(--accent-soft-fg)]">
+                      <summary className="flex cursor-pointer select-none items-center rounded-md bg-[var(--accent-soft-bg)] px-2 py-1 text-sm font-medium text-[var(--accent-soft-fg)]">
                         {sectionKey}
                       </summary>
                       {categoryList}
@@ -142,8 +158,8 @@ function RowCheckbox({
   }
 
   return (
-    <li className="group flex items-center gap-1 rounded hover:bg-[var(--input-bg)]">
-      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 px-2 py-1 text-sm text-[var(--text-primary)]">
+    <li className="group flex items-center gap-1 rounded-md hover:bg-[var(--input-bg)]">
+      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-sm text-[var(--text-primary)]">
         <input
           type="checkbox"
           checked={checked}
@@ -161,14 +177,14 @@ function RowCheckbox({
           )}
         </span>
         <span className="shrink-0 text-xs text-[var(--text-faint)]">({row.packLabel})</span>
-        <span className="shrink-0 text-xs text-[var(--text-muted)]">{formatINR(row.mrp)}</span>
+        <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">{formatINR(row.mrp)}</span>
       </label>
       <button
         type="button"
         onClick={handleDelete}
         title="Delete from catalog"
         aria-label={`Delete ${row.name} from catalog`}
-        className="shrink-0 px-1.5 text-xs text-[var(--text-faint)] opacity-0 group-hover:opacity-100 hover:text-red-500 focus-visible:opacity-100"
+        className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-faint)] opacity-0 group-hover:opacity-100 hover:text-red-500 focus-visible:opacity-100"
       >
         ✕
       </button>

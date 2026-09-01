@@ -5,7 +5,15 @@
       "name": "b2b-ratecard-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "b2b-ratecard-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "start"],
+      "port": 3100,
+      "autoPort": true
     }
   ]
 }
