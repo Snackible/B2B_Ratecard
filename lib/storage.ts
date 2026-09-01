@@ -254,6 +254,42 @@ export async function updateRateCard(
   return meta;
 }
 
+export async function deleteRateCard(id: string): Promise<void> {
+  if (USE_BLOB) {
+    const { del, list } = await import("@vercel/blob");
+    await del([`ratecards/${id}.jpg`, `ratecards/${id}.json`], { ...blobAuth });
+
+    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1, ...blobAuth });
+    const index: RateCardMeta[] =
+      blobs.length > 0 ? await (await fetch(blobs[0].url, { cache: "no-store" })).json() : [];
+    const { put } = await import("@vercel/blob");
+    await put(
+      "ratecards/index.json",
+      JSON.stringify(
+        index.filter((m) => m.id !== id),
+        null,
+        2
+      ),
+      {
+        access: "public",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: "application/json",
+        ...blobAuth,
+      }
+    );
+    return;
+  }
+
+  await fs.rm(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`), { force: true });
+  await fs.rm(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), { force: true });
+  const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
+  await writeJsonFile(
+    LOCAL_INDEX,
+    index.filter((m) => m.id !== id)
+  );
+}
+
 export async function getRateCard(id: string): Promise<RateCardSnapshot | null> {
   if (USE_BLOB) {
     const { list } = await import("@vercel/blob");

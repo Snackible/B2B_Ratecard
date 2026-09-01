@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listRateCards } from "@/lib/storage";
 import { formatINR } from "@/lib/rows";
 import DownloadRateCardButton from "@/components/DownloadRateCardButton";
+import DeleteRateCardButton from "@/components/DeleteRateCardButton";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export default async function SavedRateCardsPage() {
                   <Link href={`/?from=${card.id}`} className="text-[var(--accent)] hover:text-[var(--accent-hover)]">
                     Load
                   </Link>
+                  <DeleteRateCardButton id={card.id} name={displayName} />
                 </div>
               </div>
             );
