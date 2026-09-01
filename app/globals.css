@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --app-bg: #faf5ea;
+  --panel-bg: #ffffff;
+  --panel-border: #f0e4cc;
+  --input-bg: #faf5ea;
+  --input-border: #f0e4cc;
+
+  --text-primary: #3a2f22;
+  --text-secondary: #5c5040;
+  --text-muted: #8a7a63;
+  --text-faint: #a89878;
+
+  --accent: #1f6b3a;
+  --accent-hover: #17532d;
+  --accent-fg: #ffffff;
+  --accent-soft-bg: #eaf5ec;
+  --accent-soft-fg: #1f6b3a;
+
+  --secondary-accent: #e8571c;
+  --secondary-accent-hover: #b5541a;
+  --secondary-fg: #ffffff;
+  --secondary-soft-bg: #fdeee0;
+
+  --danger: #d64545;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --app-bg: #14171a;
+  --panel-bg: #191d21;
+  --panel-border: #262b30;
+  --input-bg: #0f1113;
+  --input-border: #2b3136;
+
+  --text-primary: #dfe3e6;
+  --text-secondary: #9aa3ab;
+  --text-muted: #6b7280;
+  --text-faint: #5a6167;
+
+  --accent: #3fae5f;
+  --accent-hover: #35934f;
+  --accent-fg: #0f1113;
+  --accent-soft-bg: #1b2e22;
+  --accent-soft-fg: #7fd99a;
+
+  --secondary-accent: #3fae5f;
+  --secondary-accent-hover: #35934f;
+  --secondary-fg: #0f1113;
+  --secondary-soft-bg: #1b2e22;
+
+  --danger: #e5787a;
+}
+
+@theme inline {
+  --color-app-bg: var(--app-bg);
+  --color-panel-bg: var(--panel-bg);
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--text-primary);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
