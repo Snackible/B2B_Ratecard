@@ -44,7 +44,12 @@ export default async function SavedRateCardsPage() {
                 className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3.5 hover:bg-[var(--input-bg)]"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium text-[var(--text-primary)]">{displayName}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-medium text-[var(--text-primary)]">{displayName}</span>
+                    <span className="shrink-0 rounded bg-[var(--input-bg)] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--text-muted)] uppercase">
+                      {card.orderType === "hamper" ? "Hamper" : "Bulk"}
+                    </span>
+                  </div>
                   <div className="tabular-nums mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-[var(--text-muted)]">
                     <span>{card.itemCount} item{card.itemCount === 1 ? "" : "s"}</span>
                     <span aria-hidden>&middot;</span>

@@ -40,6 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local runtime data (dev fallback for catalog/ratecards when Blob isn't configured)
+# local runtime data (dev fallback for catalog/ratecards/hamper config/settings when Blob isn't configured)
 /data/catalog.json
 /data/ratecards/
+/data/hamper-config.json
+/data/settings.json

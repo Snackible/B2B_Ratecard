@@ -15,6 +15,18 @@ export type CatalogRow = {
 
 export type SelectedRow = CatalogRow & { quantity: number };
 
+export const BULK_SEGMENTS: Segment[] = ["Standard Grammage", "One Serving Pack", "Large Grammage"];
+
+export function groupBySegment(rows: CatalogRow[]): Map<Segment, CatalogRow[]> {
+  const map = new Map<Segment, CatalogRow[]>();
+  for (const segment of BULK_SEGMENTS) map.set(segment, []);
+  for (const row of rows) {
+    if (!map.has(row.segment)) map.set(row.segment, []);
+    map.get(row.segment)!.push(row);
+  }
+  return map;
+}
+
 export function buildRows(items: Item[]): CatalogRow[] {
   const rows: CatalogRow[] = [];
   for (const item of items) {

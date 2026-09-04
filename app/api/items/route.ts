@@ -19,7 +19,11 @@ export async function POST(req: Request) {
   if (typeof body.mrp !== "number" || body.mrp <= 0) {
     return NextResponse.json({ error: "MRP must be a positive number" }, { status: 400 });
   }
-  if (body.segment !== "Standard Grammage" && body.segment !== "One Serving Pack") {
+  if (
+    body.segment !== "Standard Grammage" &&
+    body.segment !== "One Serving Pack" &&
+    body.segment !== "Large Grammage"
+  ) {
     return NextResponse.json({ error: "Invalid segment" }, { status: 400 });
   }
 

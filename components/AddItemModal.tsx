@@ -137,6 +137,7 @@ export default function AddItemModal({ onClose, onAdd, existingCategories, exist
               >
                 <option>Standard Grammage</option>
                 <option>One Serving Pack</option>
+                <option>Large Grammage</option>
               </select>
             </Field>
 

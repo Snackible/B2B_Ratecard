@@ -1,4 +1,6 @@
-export type Segment = "Standard Grammage" | "One Serving Pack";
+export type Segment = "Standard Grammage" | "One Serving Pack" | "Large Grammage";
+
+export type OrderType = "bulk" | "hamper";
 
 export type Item = {
   id: string;
@@ -26,11 +28,49 @@ export type RateCardLineItem = {
   quantity: number;
 };
 
+export type BoxType = {
+  id: string;
+  name: string;
+};
+
+export type Box = {
+  id: string;
+  boxTypeId: string;
+  name: string;
+  cost: number;
+  itemIds: string[];
+};
+
+export type HamperConfig = {
+  boxTypes: BoxType[];
+  boxes: Box[];
+};
+
+export type NewBoxTypeInput = Omit<BoxType, "id">;
+export type NewBoxInput = Omit<Box, "id">;
+
+export type HamperBoxInstance = {
+  key: string;
+  boxId: string;
+  boxTypeName: string;
+  boxName: string;
+  boxCost: number;
+  lineItems: RateCardLineItem[];
+};
+
+export type AppSettings = {
+  transportCost: number;
+};
+
 export type RateCardMeta = {
   id: string;
+  orderType: OrderType;
   clientName: string | null;
   showClientName: boolean;
   discountPercent: number;
+  transportCostEnabled: boolean;
+  transportCostAmount: number;
+  boxCostTotal: number;
   itemCount: number;
   totalAmount: number;
   createdAt: string;
@@ -40,6 +80,7 @@ export type RateCardMeta = {
 
 export type RateCardSnapshot = RateCardMeta & {
   lineItems: RateCardLineItem[];
+  boxInstances?: HamperBoxInstance[];
 };
 
-export const DISCOUNT_OPTIONS = [0, 5, 10, 15, 20, 25, 30] as const;
+export const DISCOUNT_OPTIONS = [10, 12, 15, 18, 20, 22] as const;
