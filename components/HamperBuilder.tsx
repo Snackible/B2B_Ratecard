@@ -15,6 +15,7 @@ type Props = {
   boxInstances: HamperBoxInstance[];
   onAddBoxInstance: (instance: HamperBoxInstance) => void;
   onRemoveBoxInstance: (key: string) => void;
+  onUpdateBoxInstance: (key: string, patch: Partial<Pick<HamperBoxInstance, "boxCost" | "transportCost">>) => void;
   discountPercent: number;
   onDiscountChange: (percent: number) => void;
   clientName: string;
@@ -37,6 +38,7 @@ export default function HamperBuilder({
   boxInstances,
   onAddBoxInstance,
   onRemoveBoxInstance,
+  onUpdateBoxInstance,
   discountPercent,
   onDiscountChange,
   clientName,
@@ -304,21 +306,46 @@ export default function HamperBuilder({
           </div>
           <ul className="divide-y divide-[var(--panel-border)]">
             {boxInstances.map((b) => (
-              <li key={b.key} className="flex items-center justify-between py-2">
-                <div>
+              <li key={b.key} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <div className="min-w-0">
                   <span className="text-sm font-medium text-[var(--text-primary)]">{b.boxName}</span>
                   <span className="ml-2 text-xs text-[var(--text-muted)]">
-                    {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"} &middot; {formatINR(b.boxCost)} box
-                    &middot; {formatINR(b.transportCost)} transport
+                    {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"}
                   </span>
                 </div>
-                <button
-                  onClick={() => onRemoveBoxInstance(b.key)}
-                  className="text-xs text-[var(--text-faint)] hover:text-red-500"
-                  aria-label={`Remove ${b.boxName}`}
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                    Box
+                    <span className="text-[var(--text-faint)]">₹</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={b.boxCost}
+                      onChange={(e) => onUpdateBoxInstance(b.key, { boxCost: Math.max(0, Number(e.target.value) || 0) })}
+                      className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    />
+                  </label>
+                  <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                    Transport
+                    <span className="text-[var(--text-faint)]">₹</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={b.transportCost}
+                      onChange={(e) =>
+                        onUpdateBoxInstance(b.key, { transportCost: Math.max(0, Number(e.target.value) || 0) })
+                      }
+                      className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    />
+                  </label>
+                  <button
+                    onClick={() => onRemoveBoxInstance(b.key)}
+                    className="text-xs text-[var(--text-faint)] hover:text-red-500"
+                    aria-label={`Remove ${b.boxName}`}
+                  >
+                    ✕
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

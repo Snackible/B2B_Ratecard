@@ -120,6 +120,10 @@ export default function OrderFlow({
     setBoxInstances((prev) => prev.filter((b) => b.key !== key));
   }
 
+  function updateBoxInstance(key: string, patch: Partial<Pick<HamperBoxInstance, "boxCost" | "transportCost">>) {
+    setBoxInstances((prev) => prev.map((b) => (b.key === key ? { ...b, ...patch } : b)));
+  }
+
   async function renderJpeg(): Promise<string> {
     if (!exportRef.current) throw new Error("Preview not ready");
     return toJpeg(exportRef.current, { quality: 0.95, backgroundColor: "#ffffff", pixelRatio: 2 });
@@ -243,6 +247,7 @@ export default function OrderFlow({
               boxInstances={boxInstances}
               onAddBoxInstance={addBoxInstance}
               onRemoveBoxInstance={removeBoxInstance}
+              onUpdateBoxInstance={updateBoxInstance}
               discountPercent={discountPercent}
               onDiscountChange={setDiscountPercent}
               clientName={clientName}
