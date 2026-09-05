@@ -99,6 +99,17 @@ export async function addItem(input: Omit<Item, "id">): Promise<Item> {
   return item;
 }
 
+// Adds every input in a single read-modify-write, so bulk imports don't need
+// one API call per item (sequential single-item writes race each other — see
+// the "never bulk-write the catalog sequentially" lesson).
+export async function addItems(inputs: Omit<Item, "id">[]): Promise<Item[]> {
+  const items = await getCatalog();
+  const created = inputs.map((input) => ({ ...input, id: randomUUID() }));
+  items.push(...created);
+  await saveCatalog(items);
+  return created;
+}
+
 export async function updateItem(id: string, patch: Partial<Omit<Item, "id">>): Promise<Item | null> {
   const items = await getCatalog();
   const index = items.findIndex((i) => i.id === id);
