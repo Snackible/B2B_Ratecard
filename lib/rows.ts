@@ -49,7 +49,7 @@ export function buildRows(items: Item[]): CatalogRow[] {
         name: item.name,
         category: item.category,
         section: item.section,
-        segment: item.segment,
+        segment: "Large Grammage",
         packLabel: `${item.largerPackGrammage}g (Larger Pack)`,
         grammage: item.largerPackGrammage,
         shelfLifeDays: item.shelfLifeDays,
