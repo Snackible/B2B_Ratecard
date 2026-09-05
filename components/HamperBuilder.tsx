@@ -6,6 +6,8 @@ import { formatINR } from "@/lib/rows";
 import DiscountPicker from "./DiscountPicker";
 import BoxManagerModal from "./BoxManagerModal";
 
+const UNASSIGNED = "__unassigned__";
+
 type Props = {
   items: Item[];
   hamperConfig: HamperConfig;
@@ -19,8 +21,12 @@ type Props = {
   onClientNameChange: (name: string) => void;
   showClientName: boolean;
   onShowClientNameChange: (show: boolean) => void;
-  transportCost: number;
-  onTransportCostChange: (amount: number) => void;
+  diyaEnabled: boolean;
+  onDiyaEnabledChange: (enabled: boolean) => void;
+  diyaQuantity: number;
+  onDiyaQuantityChange: (qty: number) => void;
+  diyaPackCost: number;
+  onDiyaPackCostChange: (cost: number) => void;
   onNext: () => void;
 };
 
@@ -37,23 +43,33 @@ export default function HamperBuilder({
   onClientNameChange,
   showClientName,
   onShowClientNameChange,
-  transportCost,
-  onTransportCostChange,
+  diyaEnabled,
+  onDiyaEnabledChange,
+  diyaQuantity,
+  onDiyaQuantityChange,
+  diyaPackCost,
+  onDiyaPackCostChange,
   onNext,
 }: Props) {
   const [showManager, setShowManager] = useState(false);
   const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
-  const [transportInput, setTransportInput] = useState(String(transportCost));
+  const [diyaCostInput, setDiyaCostInput] = useState(String(diyaPackCost));
 
-  // Falls back to the first box type once one exists, without needing an effect
-  // to sync state that was null only because no box types existed yet.
-  const effectiveTypeId = selectedTypeId ?? hamperConfig.boxTypes[0]?.id ?? null;
+  const hasUnassignedBoxes = useMemo(() => hamperConfig.boxes.some((b) => !b.boxTypeId), [hamperConfig.boxes]);
+
+  // Falls back to the first available group once one exists, without needing
+  // an effect to sync state that was null only because nothing existed yet.
+  const effectiveTypeId =
+    selectedTypeId ?? hamperConfig.boxTypes[0]?.id ?? (hasUnassignedBoxes ? UNASSIGNED : null);
 
   const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const boxesForType = useMemo(
-    () => hamperConfig.boxes.filter((b) => b.boxTypeId === effectiveTypeId),
+    () =>
+      hamperConfig.boxes.filter((b) =>
+        effectiveTypeId === UNASSIGNED ? !b.boxTypeId : b.boxTypeId === effectiveTypeId
+      ),
     [hamperConfig.boxes, effectiveTypeId]
   );
   const selectedBox = useMemo(
@@ -65,7 +81,7 @@ export default function HamperBuilder({
     [selectedBox, itemsById]
   );
 
-  function pickBoxType(id: string) {
+  function pickGroup(id: string) {
     setSelectedTypeId(id);
     setSelectedBoxId(null);
     setQuantities(new Map());
@@ -115,24 +131,30 @@ export default function HamperBuilder({
       boxTypeName: boxType?.name ?? "",
       boxName: selectedBox.name,
       boxCost: selectedBox.cost,
+      transportCost: selectedBox.transportCost,
       lineItems,
     });
     setQuantities(new Map());
   }
 
-  function commitTransportCost() {
-    const num = Number(transportInput);
+  function commitDiyaCost() {
+    const num = Number(diyaCostInput);
     if (!Number.isNaN(num) && num >= 0) {
-      onTransportCostChange(num);
+      onDiyaPackCostChange(num);
       fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transportCost: num }),
+        body: JSON.stringify({ diyaPackCost: num }),
       }).catch(() => {});
     } else {
-      setTransportInput(String(transportCost));
+      setDiyaCostInput(String(diyaPackCost));
     }
   }
+
+  const groupTabs = [
+    ...hamperConfig.boxTypes.map((bt) => ({ id: bt.id, name: bt.name })),
+    ...(hasUnassignedBoxes ? [{ id: UNASSIGNED, name: "Unassigned" }] : []),
+  ];
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
@@ -147,34 +169,34 @@ export default function HamperBuilder({
       </div>
 
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
-        {hamperConfig.boxTypes.length === 0 ? (
+        {groupTabs.length === 0 ? (
           <p className="py-6 text-center text-sm text-[var(--text-muted)]">
-            No box types yet.{" "}
+            No boxes yet.{" "}
             <button onClick={() => setShowManager(true)} className="font-medium text-[var(--accent)] hover:underline">
-              Add your first box type
+              Add your first box
             </button>{" "}
             to start building hampers.
           </p>
         ) : (
           <>
             <div className="mb-3 flex flex-wrap gap-1">
-              {hamperConfig.boxTypes.map((bt) => (
+              {groupTabs.map((g) => (
                 <button
-                  key={bt.id}
-                  onClick={() => pickBoxType(bt.id)}
+                  key={g.id}
+                  onClick={() => pickGroup(g.id)}
                   className={`rounded-md border px-3 py-1.5 text-sm font-medium active:scale-[0.97] ${
-                    effectiveTypeId === bt.id
+                    effectiveTypeId === g.id
                       ? "border-[var(--accent)] bg-[var(--accent-soft-bg)] text-[var(--accent-soft-fg)]"
                       : "border-[var(--input-border)] text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
                   }`}
                 >
-                  {bt.name}
+                  {g.name}
                 </button>
               ))}
             </div>
 
             {boxesForType.length === 0 ? (
-              <p className="py-4 text-sm text-[var(--text-faint)] italic">No boxes in this type yet.</p>
+              <p className="py-4 text-sm text-[var(--text-faint)] italic">No boxes in this group yet.</p>
             ) : (
               <div className="mb-3 flex flex-wrap gap-2">
                 {boxesForType.map((box) => (
@@ -189,7 +211,8 @@ export default function HamperBuilder({
                   >
                     <div className="font-medium text-[var(--text-primary)]">{box.name}</div>
                     <div className="tabular-nums text-xs text-[var(--text-muted)]">
-                      {formatINR(box.cost)} box cost &middot; {box.itemIds.length} eligible
+                      {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport &middot;{" "}
+                      {box.itemIds.length} eligible
                     </div>
                   </button>
                 ))}
@@ -260,7 +283,8 @@ export default function HamperBuilder({
                 <div>
                   <span className="text-sm font-medium text-[var(--text-primary)]">{b.boxName}</span>
                   <span className="ml-2 text-xs text-[var(--text-muted)]">
-                    {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"} &middot; {formatINR(b.boxCost)} box cost
+                    {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"} &middot; {formatINR(b.boxCost)} box
+                    &middot; {formatINR(b.transportCost)} transport
                   </span>
                 </div>
                 <button
@@ -302,19 +326,38 @@ export default function HamperBuilder({
 
         <div className="h-8 w-px bg-[var(--panel-border)]" aria-hidden />
 
-        <div>
-          <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">Transport cost (applied to hamper)</div>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-[var(--text-faint)]">₹</span>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
             <input
-              type="number"
-              min={0}
-              value={transportInput}
-              onChange={(e) => setTransportInput(e.target.value)}
-              onBlur={commitTransportCost}
-              className="w-20 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              type="checkbox"
+              checked={diyaEnabled}
+              onChange={(e) => onDiyaEnabledChange(e.target.checked)}
+              className="h-4 w-4 accent-[var(--accent)]"
             />
-          </div>
+            Diya add-on
+          </label>
+          {diyaEnabled && (
+            <>
+              <input
+                type="number"
+                min={1}
+                value={diyaQuantity}
+                onChange={(e) => onDiyaQuantityChange(Math.max(1, Number(e.target.value) || 1))}
+                title="Packs"
+                className="w-14 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              />
+              <span className="text-xs text-[var(--text-faint)]">packs &times; ₹</span>
+              <input
+                type="number"
+                min={0}
+                value={diyaCostInput}
+                onChange={(e) => setDiyaCostInput(e.target.value)}
+                onBlur={commitDiyaCost}
+                title="Cost per pack"
+                className="w-16 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              />
+            </>
+          )}
         </div>
 
         <div className="ml-auto">

@@ -16,6 +16,9 @@ type Props = {
   boxInstances?: HamperBoxInstance[];
   transportCostEnabled?: boolean;
   transportCostAmount?: number;
+  diyaEnabled?: boolean;
+  diyaQuantity?: number;
+  diyaCostTotal?: number;
 };
 
 const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPreview(
@@ -30,6 +33,9 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
     boxInstances,
     transportCostEnabled,
     transportCostAmount,
+    diyaEnabled,
+    diyaQuantity,
+    diyaCostTotal,
   },
   ref
 ) {
@@ -48,7 +54,8 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
   const discountAmount = subtotal - applyDiscount(subtotal, discountPercent);
   const boxCostTotal = (boxInstances ?? []).reduce((sum, box) => sum + box.boxCost, 0);
   const transportAmount = transportCostEnabled ? transportCostAmount ?? 0 : 0;
-  const payableAmount = subtotal - discountAmount + boxCostTotal + transportAmount;
+  const diyaAmount = diyaEnabled ? diyaCostTotal ?? 0 : 0;
+  const payableAmount = subtotal - discountAmount + boxCostTotal + transportAmount + diyaAmount;
   const colCount = onRemove ? 8 : 7;
   const hasBoxes = Boolean(boxInstances && boxInstances.length > 0);
 
@@ -93,7 +100,9 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
                   {box.boxTypeName ? `${box.boxTypeName} — ` : ""}
                   {box.boxName}
                 </span>
-                <span className="tabular-nums font-normal">{formatINR(box.boxCost)} box cost</span>
+                <span className="tabular-nums font-normal">
+                  {formatINR(box.boxCost)} box &middot; {formatINR(box.transportCost)} transport
+                </span>
               </div>
               <table className="w-full border-collapse text-sm">
                 <thead>
@@ -209,6 +218,12 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
               <tr className={`${footerBg} font-semibold`}>
                 <td className={`border ${cellBorder} px-3 py-2 text-right`}>Transport cost</td>
                 <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(transportAmount)}</td>
+              </tr>
+            )}
+            {diyaEnabled && (
+              <tr className={`${footerBg} font-semibold`}>
+                <td className={`border ${cellBorder} px-3 py-2 text-right`}>Diya add-on ({diyaQuantity} packs)</td>
+                <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(diyaAmount)}</td>
               </tr>
             )}
             <tr className={`${footerBg} font-semibold`}>

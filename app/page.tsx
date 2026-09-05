@@ -18,7 +18,7 @@ export default async function Home({
     <OrderFlow
       initialItems={items}
       initialHamperConfig={hamperConfig}
-      initialTransportCost={settings.transportCost}
+      initialSettings={settings}
       initialSnapshot={initialSnapshot}
       editId={edit && initialSnapshot ? edit : null}
     />

@@ -35,9 +35,10 @@ export type BoxType = {
 
 export type Box = {
   id: string;
-  boxTypeId: string;
+  boxTypeId: string | null;
   name: string;
   cost: number;
+  transportCost: number;
   itemIds: string[];
 };
 
@@ -55,11 +56,13 @@ export type HamperBoxInstance = {
   boxTypeName: string;
   boxName: string;
   boxCost: number;
+  transportCost: number;
   lineItems: RateCardLineItem[];
 };
 
 export type AppSettings = {
   transportCost: number;
+  diyaPackCost: number;
 };
 
 export type RateCardMeta = {
@@ -71,6 +74,9 @@ export type RateCardMeta = {
   transportCostEnabled: boolean;
   transportCostAmount: number;
   boxCostTotal: number;
+  diyaEnabled: boolean;
+  diyaQuantity: number;
+  diyaCostTotal: number;
   itemCount: number;
   totalAmount: number;
   createdAt: string;

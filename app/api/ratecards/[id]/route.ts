@@ -10,6 +10,9 @@ type UpdateBody = {
   transportCostEnabled: boolean;
   transportCostAmount: number;
   boxCostTotal: number;
+  diyaEnabled: boolean;
+  diyaQuantity: number;
+  diyaCostTotal: number;
   lineItems: RateCardLineItem[];
   boxInstances?: HamperBoxInstance[];
   imageDataUrl: string;
@@ -44,6 +47,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       transportCostEnabled: Boolean(body.transportCostEnabled),
       transportCostAmount: typeof body.transportCostAmount === "number" ? body.transportCostAmount : 0,
       boxCostTotal: typeof body.boxCostTotal === "number" ? body.boxCostTotal : 0,
+      diyaEnabled: Boolean(body.diyaEnabled),
+      diyaQuantity: typeof body.diyaQuantity === "number" ? body.diyaQuantity : 0,
+      diyaCostTotal: typeof body.diyaCostTotal === "number" ? body.diyaCostTotal : 0,
       lineItems: body.lineItems ?? [],
       boxInstances: body.boxInstances,
     },

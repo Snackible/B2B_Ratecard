@@ -13,9 +13,10 @@ type Props = {
 
 type BoxForm = {
   id: string | null;
-  boxTypeId: string;
+  boxTypeId: string | null;
   name: string;
   cost: string;
+  transportCost: string;
   itemIds: Set<string>;
 };
 
@@ -89,14 +90,21 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
     }
   }
 
-  function startNewBox(boxTypeId: string) {
+  function startNewBox(boxTypeId: string | null) {
     setError(null);
-    setBoxForm({ id: null, boxTypeId, name: "", cost: "", itemIds: new Set() });
+    setBoxForm({ id: null, boxTypeId, name: "", cost: "", transportCost: "", itemIds: new Set() });
   }
 
   function startEditBox(box: Box) {
     setError(null);
-    setBoxForm({ id: box.id, boxTypeId: box.boxTypeId, name: box.name, cost: String(box.cost), itemIds: new Set(box.itemIds) });
+    setBoxForm({
+      id: box.id,
+      boxTypeId: box.boxTypeId,
+      name: box.name,
+      cost: String(box.cost),
+      transportCost: String(box.transportCost),
+      itemIds: new Set(box.itemIds),
+    });
   }
 
   function toggleFormItem(itemId: string) {
@@ -112,12 +120,17 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
   async function saveBoxForm() {
     if (!boxForm) return;
     const cost = Number(boxForm.cost);
+    const transportCost = Number(boxForm.transportCost);
     if (!boxForm.name.trim()) {
       setError("Box name is required.");
       return;
     }
     if (!boxForm.cost || Number.isNaN(cost) || cost < 0) {
       setError("Box cost must be a non-negative number.");
+      return;
+    }
+    if (!boxForm.transportCost || Number.isNaN(transportCost) || transportCost < 0) {
+      setError("Transportation cost must be a non-negative number.");
       return;
     }
     setBusy(true);
@@ -127,6 +140,7 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
         boxTypeId: boxForm.boxTypeId,
         name: boxForm.name.trim(),
         cost,
+        transportCost,
         itemIds: [...boxForm.itemIds],
       };
       const res = await fetch(boxForm.id ? `/api/hamper/boxes/${boxForm.id}` : "/api/hamper/boxes", {
@@ -171,9 +185,52 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
 
           {!boxForm ? (
             <div className="space-y-5">
-              {config.boxTypes.length === 0 && (
+              {config.boxTypes.length === 0 && config.boxes.length === 0 && (
                 <p className="text-sm text-[var(--text-muted)]">No box types yet. Add your first one below.</p>
               )}
+
+              <div className="rounded-lg border border-dashed border-[var(--panel-border)] p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-sm font-semibold tracking-tight text-[var(--text-secondary)]">
+                    Unassigned <span className="font-normal text-[var(--text-faint)]">(no box type yet)</span>
+                  </div>
+                  <button
+                    onClick={() => startNewBox(null)}
+                    className="rounded-md bg-[var(--secondary-accent)] px-2 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
+                  >
+                    + Add Box
+                  </button>
+                </div>
+                <ul className="space-y-1">
+                  {config.boxes
+                    .filter((b) => !b.boxTypeId)
+                    .map((box) => (
+                      <li
+                        key={box.id}
+                        className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-[var(--input-bg)]"
+                      >
+                        <button onClick={() => startEditBox(box)} className="min-w-0 flex-1 text-left">
+                          <span className="font-medium text-[var(--text-primary)]">{box.name}</span>
+                          <span className="ml-2 text-xs text-[var(--text-muted)]">
+                            {box.itemIds.length} eligible item{box.itemIds.length === 1 ? "" : "s"} &middot;{" "}
+                            {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => deleteBox(box.id)}
+                          className="shrink-0 px-1.5 text-xs text-[var(--text-faint)] hover:text-red-500"
+                          aria-label={`Delete ${box.name}`}
+                        >
+                          ✕
+                        </button>
+                      </li>
+                    ))}
+                  {config.boxes.filter((b) => !b.boxTypeId).length === 0 && (
+                    <li className="px-2 py-1 text-xs text-[var(--text-faint)] italic">No unassigned boxes</li>
+                  )}
+                </ul>
+              </div>
+
               {config.boxTypes.map((bt) => (
                 <div key={bt.id} className="rounded-lg border border-[var(--panel-border)] p-3">
                   <div className="mb-2 flex items-center justify-between">
@@ -205,7 +262,7 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
                             <span className="font-medium text-[var(--text-primary)]">{box.name}</span>
                             <span className="ml-2 text-xs text-[var(--text-muted)]">
                               {box.itemIds.length} eligible item{box.itemIds.length === 1 ? "" : "s"} &middot;{" "}
-                              {formatINR(box.cost)} box cost
+                              {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
                             </span>
                           </button>
                           <button
@@ -261,6 +318,31 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
                     value={boxForm.cost}
                     onChange={(e) => setBoxForm((f) => (f ? { ...f, cost: e.target.value } : f))}
                   />
+                </label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)]">
+                  Transportation Cost (₹) *
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    value={boxForm.transportCost}
+                    onChange={(e) => setBoxForm((f) => (f ? { ...f, transportCost: e.target.value } : f))}
+                  />
+                </label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] sm:col-span-2">
+                  Box Type
+                  <select
+                    className="mt-1 w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    value={boxForm.boxTypeId ?? ""}
+                    onChange={(e) => setBoxForm((f) => (f ? { ...f, boxTypeId: e.target.value || null } : f))}
+                  >
+                    <option value="">Unassigned</option>
+                    {config.boxTypes.map((bt) => (
+                      <option key={bt.id} value={bt.id}>
+                        {bt.name}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
 

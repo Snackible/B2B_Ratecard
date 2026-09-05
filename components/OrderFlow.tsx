@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toJpeg } from "html-to-image";
 import type {
+  AppSettings,
   HamperBoxInstance,
   HamperConfig,
   Item,
@@ -33,13 +34,13 @@ function deriveInitialQuantities(items: Item[], snapshot: RateCardSnapshot | nul
 export default function OrderFlow({
   initialItems,
   initialHamperConfig,
-  initialTransportCost,
+  initialSettings,
   initialSnapshot,
   editId,
 }: {
   initialItems: Item[];
   initialHamperConfig: HamperConfig;
-  initialTransportCost: number;
+  initialSettings: AppSettings;
   initialSnapshot?: RateCardSnapshot | null;
   editId?: string | null;
 }) {
@@ -50,7 +51,8 @@ export default function OrderFlow({
 
   const [items, setItems] = useState(initialItems);
   const [hamperConfig, setHamperConfig] = useState(initialHamperConfig);
-  const [transportCost, setTransportCost] = useState(initialTransportCost);
+  const [transportCost, setTransportCost] = useState(initialSettings.transportCost);
+  const [diyaPackCost, setDiyaPackCost] = useState(initialSettings.diyaPackCost);
 
   const [quantities, setQuantities] = useState<Map<string, number>>(() =>
     deriveInitialQuantities(initialItems, initialSnapshot)
@@ -63,6 +65,8 @@ export default function OrderFlow({
   const [showClientName, setShowClientName] = useState(initialSnapshot?.showClientName ?? true);
   const [clientName, setClientName] = useState(initialSnapshot?.clientName ?? "");
   const [transportCostEnabled, setTransportCostEnabled] = useState(initialSnapshot?.transportCostEnabled ?? false);
+  const [diyaEnabled, setDiyaEnabled] = useState(initialSnapshot?.diyaEnabled ?? false);
+  const [diyaQuantity, setDiyaQuantity] = useState(initialSnapshot?.diyaQuantity ?? 1);
 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(() => {
@@ -89,9 +93,15 @@ export default function OrderFlow({
   );
 
   const boxCostTotal = useMemo(() => boxInstances.reduce((sum, b) => sum + b.boxCost, 0), [boxInstances]);
+  const hamperTransportTotal = useMemo(
+    () => boxInstances.reduce((sum, b) => sum + b.transportCost, 0),
+    [boxInstances]
+  );
   const isHamper = orderType === "hamper";
   const canProceedFromBuild = isHamper ? boxInstances.length > 0 : selectedRows.length > 0;
   const transportEnabledForSave = isHamper ? true : transportCostEnabled;
+  const transportAmountForSave = isHamper ? hamperTransportTotal : transportCost;
+  const diyaCostTotal = isHamper && diyaEnabled ? diyaQuantity * diyaPackCost : 0;
 
   function toggleRow(key: string) {
     setQuantities((prev) => {
@@ -137,8 +147,11 @@ export default function OrderFlow({
           showClientName,
           discountPercent,
           transportCostEnabled: transportEnabledForSave,
-          transportCostAmount: transportCost,
+          transportCostAmount: transportAmountForSave,
           boxCostTotal: isHamper ? boxCostTotal : 0,
+          diyaEnabled: isHamper ? diyaEnabled : false,
+          diyaQuantity: isHamper ? diyaQuantity : 0,
+          diyaCostTotal: isHamper ? diyaCostTotal : 0,
           lineItems: isHamper
             ? []
             : selectedRows.map((r) => ({
@@ -203,13 +216,19 @@ export default function OrderFlow({
         rows: [],
         boxInstances,
         transportCostEnabled: true,
-        transportCostAmount: transportCost,
+        transportCostAmount: hamperTransportTotal,
+        diyaEnabled,
+        diyaQuantity,
+        diyaCostTotal,
       }
     : {
         rows: selectedRows,
         boxInstances: undefined,
         transportCostEnabled,
         transportCostAmount: transportCost,
+        diyaEnabled: false,
+        diyaQuantity: 0,
+        diyaCostTotal: 0,
       };
 
   return (
@@ -230,8 +249,12 @@ export default function OrderFlow({
               onClientNameChange={setClientName}
               showClientName={showClientName}
               onShowClientNameChange={setShowClientName}
-              transportCost={transportCost}
-              onTransportCostChange={setTransportCost}
+              diyaEnabled={diyaEnabled}
+              onDiyaEnabledChange={setDiyaEnabled}
+              diyaQuantity={diyaQuantity}
+              onDiyaQuantityChange={setDiyaQuantity}
+              diyaPackCost={diyaPackCost}
+              onDiyaPackCostChange={setDiyaPackCost}
               onNext={() => setStep("preview")}
             />
           ) : (
@@ -300,6 +323,9 @@ export default function OrderFlow({
               clientName={clientName}
               transportCostEnabled={previewProps.transportCostEnabled}
               transportCostAmount={previewProps.transportCostAmount}
+              diyaEnabled={previewProps.diyaEnabled}
+              diyaQuantity={previewProps.diyaQuantity}
+              diyaCostTotal={previewProps.diyaCostTotal}
             />
           </div>
         </div>
@@ -317,6 +343,9 @@ export default function OrderFlow({
             clientName={clientName}
             transportCostEnabled={previewProps.transportCostEnabled}
             transportCostAmount={previewProps.transportCostAmount}
+            diyaEnabled={previewProps.diyaEnabled}
+            diyaQuantity={previewProps.diyaQuantity}
+            diyaCostTotal={previewProps.diyaCostTotal}
             forceLight
           />
         </div>

@@ -39,7 +39,7 @@ const LOCAL_HAMPER_CONFIG = path.join(LOCAL_DIR, "hamper-config.json");
 const LOCAL_SETTINGS = path.join(LOCAL_DIR, "settings.json");
 
 const EMPTY_HAMPER_CONFIG: HamperConfig = { boxTypes: [], boxes: [] };
-const DEFAULT_SETTINGS: AppSettings = { transportCost: 0 };
+const DEFAULT_SETTINGS: AppSettings = { transportCost: 0, diyaPackCost: 50 };
 
 async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
   try {
@@ -169,6 +169,16 @@ export async function addBox(input: NewBoxInput): Promise<Box> {
   return box;
 }
 
+// Adds many boxes in a single read-modify-write — see the "never bulk-write
+// sequentially" lesson; looping addBox races itself under back-to-back calls.
+export async function addBoxes(inputs: NewBoxInput[]): Promise<Box[]> {
+  const config = await getHamperConfig();
+  const created = inputs.map((input) => ({ ...input, id: randomUUID() }));
+  config.boxes.push(...created);
+  await saveHamperConfig(config);
+  return created;
+}
+
 export async function updateBox(id: string, input: NewBoxInput): Promise<Box | null> {
   const config = await getHamperConfig();
   const index = config.boxes.findIndex((b) => b.id === id);
@@ -234,6 +244,9 @@ function withMetaDefaults(meta: Partial<RateCardMeta> & Pick<RateCardMeta, "id" 
     transportCostEnabled: false,
     transportCostAmount: 0,
     boxCostTotal: 0,
+    diyaEnabled: false,
+    diyaQuantity: 0,
+    diyaCostTotal: 0,
     itemCount: 0,
     totalAmount: 0,
     ...meta,
@@ -260,6 +273,7 @@ function computeTotals(snapshot: {
   transportCostEnabled: boolean;
   transportCostAmount: number;
   boxCostTotal: number;
+  diyaCostTotal: number;
 }) {
   const allLineItems = [
     ...snapshot.lineItems,
@@ -269,7 +283,7 @@ function computeTotals(snapshot: {
   const subtotal = allLineItems.reduce((sum, li) => sum + li.mrp * li.quantity, 0);
   const discounted = applyDiscount(subtotal, snapshot.discountPercent);
   const transport = snapshot.transportCostEnabled ? snapshot.transportCostAmount : 0;
-  const totalAmount = discounted + snapshot.boxCostTotal + transport;
+  const totalAmount = discounted + snapshot.boxCostTotal + transport + snapshot.diyaCostTotal;
   return { itemCount, totalAmount };
 }
 
@@ -316,6 +330,9 @@ export async function saveRateCard(
       transportCostEnabled: snapshot.transportCostEnabled,
       transportCostAmount: snapshot.transportCostAmount,
       boxCostTotal: snapshot.boxCostTotal,
+      diyaEnabled: snapshot.diyaEnabled,
+      diyaQuantity: snapshot.diyaQuantity,
+      diyaCostTotal: snapshot.diyaCostTotal,
       itemCount,
       totalAmount,
       createdAt,
@@ -350,6 +367,9 @@ export async function saveRateCard(
     transportCostEnabled: snapshot.transportCostEnabled,
     transportCostAmount: snapshot.transportCostAmount,
     boxCostTotal: snapshot.boxCostTotal,
+    diyaEnabled: snapshot.diyaEnabled,
+    diyaQuantity: snapshot.diyaQuantity,
+    diyaCostTotal: snapshot.diyaCostTotal,
     itemCount,
     totalAmount,
     createdAt,
@@ -382,6 +402,9 @@ export async function updateRateCard(
     transportCostEnabled: snapshot.transportCostEnabled,
     transportCostAmount: snapshot.transportCostAmount,
     boxCostTotal: snapshot.boxCostTotal,
+    diyaEnabled: snapshot.diyaEnabled,
+    diyaQuantity: snapshot.diyaQuantity,
+    diyaCostTotal: snapshot.diyaCostTotal,
     itemCount,
     totalAmount,
     createdAt: existing.createdAt,
