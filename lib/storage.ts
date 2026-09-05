@@ -99,6 +99,16 @@ export async function addItem(input: Omit<Item, "id">): Promise<Item> {
   return item;
 }
 
+export async function updateItem(id: string, patch: Partial<Omit<Item, "id">>): Promise<Item | null> {
+  const items = await getCatalog();
+  const index = items.findIndex((i) => i.id === id);
+  if (index === -1) return null;
+  const item: Item = { ...items[index], ...patch };
+  items[index] = item;
+  await saveCatalog(items);
+  return item;
+}
+
 export async function removeItem(id: string): Promise<void> {
   const items = await getCatalog();
   await saveCatalog(items.filter((i) => i.id !== id));
