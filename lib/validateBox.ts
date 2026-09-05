@@ -19,6 +19,5 @@ export function parseNewBoxInput(body: Partial<NewBoxInput>): NewBoxInput | stri
     boxTypeId: body.boxTypeId || null,
     cost: body.cost,
     transportCost: body.transportCost,
-    itemIds: Array.isArray(body.itemIds) ? body.itemIds : [],
   };
 }

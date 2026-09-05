@@ -39,7 +39,6 @@ export type Box = {
   name: string;
   cost: number;
   transportCost: number;
-  itemIds: string[];
 };
 
 export type HamperConfig = {

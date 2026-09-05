@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { Box, HamperConfig, Item } from "@/lib/types";
+import { useState } from "react";
+import type { Box, HamperConfig } from "@/lib/types";
 import { formatINR } from "@/lib/rows";
 
 type Props = {
-  items: Item[];
   hamperConfig: HamperConfig;
   onClose: () => void;
   onChange: (config: HamperConfig) => void;
@@ -17,24 +16,14 @@ type BoxForm = {
   name: string;
   cost: string;
   transportCost: string;
-  itemIds: Set<string>;
 };
 
-export default function BoxManagerModal({ items, hamperConfig, onClose, onChange }: Props) {
+export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Props) {
   const [config, setConfig] = useState(hamperConfig);
   const [newTypeName, setNewTypeName] = useState("");
   const [boxForm, setBoxForm] = useState<BoxForm | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const itemsByCategory = useMemo(() => {
-    const map = new Map<string, Item[]>();
-    for (const item of items) {
-      if (!map.has(item.category)) map.set(item.category, []);
-      map.get(item.category)!.push(item);
-    }
-    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [items]);
 
   async function addBoxType() {
     if (!newTypeName.trim()) return;
@@ -92,7 +81,7 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
 
   function startNewBox(boxTypeId: string | null) {
     setError(null);
-    setBoxForm({ id: null, boxTypeId, name: "", cost: "", transportCost: "", itemIds: new Set() });
+    setBoxForm({ id: null, boxTypeId, name: "", cost: "", transportCost: "" });
   }
 
   function startEditBox(box: Box) {
@@ -103,17 +92,6 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
       name: box.name,
       cost: String(box.cost),
       transportCost: String(box.transportCost),
-      itemIds: new Set(box.itemIds),
-    });
-  }
-
-  function toggleFormItem(itemId: string) {
-    setBoxForm((f) => {
-      if (!f) return f;
-      const next = new Set(f.itemIds);
-      if (next.has(itemId)) next.delete(itemId);
-      else next.add(itemId);
-      return { ...f, itemIds: next };
     });
   }
 
@@ -141,7 +119,6 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
         name: boxForm.name.trim(),
         cost,
         transportCost,
-        itemIds: [...boxForm.itemIds],
       };
       const res = await fetch(boxForm.id ? `/api/hamper/boxes/${boxForm.id}` : "/api/hamper/boxes", {
         method: boxForm.id ? "PUT" : "POST",
@@ -212,7 +189,6 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
                         <button onClick={() => startEditBox(box)} className="min-w-0 flex-1 text-left">
                           <span className="font-medium text-[var(--text-primary)]">{box.name}</span>
                           <span className="ml-2 text-xs text-[var(--text-muted)]">
-                            {box.itemIds.length} eligible item{box.itemIds.length === 1 ? "" : "s"} &middot;{" "}
                             {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
                           </span>
                         </button>
@@ -261,7 +237,6 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
                           <button onClick={() => startEditBox(box)} className="min-w-0 flex-1 text-left">
                             <span className="font-medium text-[var(--text-primary)]">{box.name}</span>
                             <span className="ml-2 text-xs text-[var(--text-muted)]">
-                              {box.itemIds.length} eligible item{box.itemIds.length === 1 ? "" : "s"} &middot;{" "}
                               {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
                             </span>
                           </button>
@@ -346,41 +321,9 @@ export default function BoxManagerModal({ items, hamperConfig, onClose, onChange
                 </label>
               </div>
 
-              <div>
-                <div className="mb-1.5 text-xs font-medium text-[var(--text-secondary)]">
-                  Eligible items ({boxForm.itemIds.size} selected)
-                </div>
-                <div className="max-h-72 overflow-y-auto rounded-md border border-[var(--input-border)] p-2">
-                  {itemsByCategory.length === 0 && (
-                    <p className="p-2 text-xs text-[var(--text-faint)] italic">No catalog items yet.</p>
-                  )}
-                  {itemsByCategory.map(([category, catItems]) => (
-                    <details key={category} open className="mb-1">
-                      <summary className="cursor-pointer select-none rounded px-2 py-1 text-xs font-semibold tracking-wide text-[var(--text-muted)] uppercase hover:bg-[var(--input-bg)]">
-                        {category}
-                      </summary>
-                      <ul>
-                        {catItems.map((item) => (
-                          <li key={item.id}>
-                            <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--input-bg)]">
-                              <input
-                                type="checkbox"
-                                checked={boxForm.itemIds.has(item.id)}
-                                onChange={() => toggleFormItem(item.id)}
-                                className="h-4 w-4 shrink-0 accent-[var(--accent)]"
-                              />
-                              <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                              <span className="tabular-nums shrink-0 text-xs text-[var(--text-faint)]">
-                                {formatINR(item.mrp)}
-                              </span>
-                            </label>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  ))}
-                </div>
-              </div>
+              <p className="text-xs text-[var(--text-faint)]">
+                Items are chosen per hamper when this box is added, not fixed here.
+              </p>
 
               <div className="flex justify-end gap-2 border-t border-[var(--panel-border)] pt-4">
                 <button

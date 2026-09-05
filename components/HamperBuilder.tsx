@@ -56,6 +56,7 @@ export default function HamperBuilder({
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
   const [diyaCostInput, setDiyaCostInput] = useState(String(diyaPackCost));
+  const [itemSearch, setItemSearch] = useState("");
 
   const hasUnassignedBoxes = useMemo(() => hamperConfig.boxes.some((b) => !b.boxTypeId), [hamperConfig.boxes]);
 
@@ -76,10 +77,16 @@ export default function HamperBuilder({
     () => hamperConfig.boxes.find((b) => b.id === selectedBoxId) ?? null,
     [hamperConfig.boxes, selectedBoxId]
   );
-  const eligibleItems = useMemo(
-    () => (selectedBox ? selectedBox.itemIds.map((id) => itemsById.get(id)).filter((i): i is Item => Boolean(i)) : []),
-    [selectedBox, itemsById]
-  );
+  const itemsByCategory = useMemo(() => {
+    const q = itemSearch.trim().toLowerCase();
+    const filtered = q ? items.filter((i) => i.name.toLowerCase().includes(q)) : items;
+    const map = new Map<string, Item[]>();
+    for (const item of filtered) {
+      if (!map.has(item.category)) map.set(item.category, []);
+      map.get(item.category)!.push(item);
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [items, itemSearch]);
 
   function pickGroup(id: string) {
     setSelectedTypeId(id);
@@ -90,6 +97,7 @@ export default function HamperBuilder({
   function pickBox(id: string) {
     setSelectedBoxId(id);
     setQuantities(new Map());
+    setItemSearch("");
   }
 
   function toggleItem(itemId: string) {
@@ -211,8 +219,7 @@ export default function HamperBuilder({
                   >
                     <div className="font-medium text-[var(--text-primary)]">{box.name}</div>
                     <div className="tabular-nums text-xs text-[var(--text-muted)]">
-                      {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport &middot;{" "}
-                      {box.itemIds.length} eligible
+                      {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
                     </div>
                   </button>
                 ))}
@@ -221,43 +228,61 @@ export default function HamperBuilder({
 
             {selectedBox && (
               <div className="border-t border-[var(--panel-border)] pt-3">
-                <div className="mb-2 text-xs font-medium text-[var(--text-muted)]">
-                  Choose items for &ldquo;{selectedBox.name}&rdquo;
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="text-xs font-medium text-[var(--text-muted)]">
+                    Choose items for &ldquo;{selectedBox.name}&rdquo; ({quantities.size} selected)
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={itemSearch}
+                    onChange={(e) => setItemSearch(e.target.value)}
+                    className="w-40 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
+                  />
                 </div>
-                {eligibleItems.length === 0 ? (
-                  <p className="text-sm text-[var(--text-faint)] italic">
-                    No items assigned to this box yet — add some via Manage Boxes.
-                  </p>
+                {itemsByCategory.length === 0 ? (
+                  <p className="text-sm text-[var(--text-faint)] italic">No matching products.</p>
                 ) : (
-                  <ul className="max-h-64 space-y-1 overflow-y-auto">
-                    {eligibleItems.map((item) => {
-                      const qty = quantities.get(item.id);
-                      return (
-                        <li
-                          key={item.id}
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--input-bg)]"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={quantities.has(item.id)}
-                            onChange={() => toggleItem(item.id)}
-                            className="h-4 w-4 shrink-0 accent-[var(--accent)]"
-                          />
-                          <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{item.name}</span>
-                          <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">{formatINR(item.mrp)}</span>
-                          {qty !== undefined && (
-                            <input
-                              type="number"
-                              min={1}
-                              value={qty}
-                              onChange={(e) => setItemQty(item.id, Number(e.target.value) || 1)}
-                              className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
-                            />
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <div className="max-h-64 overflow-y-auto">
+                    {itemsByCategory.map(([category, catItems]) => (
+                      <details key={category} open className="mb-1">
+                        <summary className="cursor-pointer select-none rounded px-2 py-1 text-xs font-semibold tracking-wide text-[var(--text-muted)] uppercase hover:bg-[var(--input-bg)]">
+                          {category}
+                        </summary>
+                        <ul>
+                          {catItems.map((item) => {
+                            const qty = quantities.get(item.id);
+                            return (
+                              <li
+                                key={item.id}
+                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--input-bg)]"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={quantities.has(item.id)}
+                                  onChange={() => toggleItem(item.id)}
+                                  className="h-4 w-4 shrink-0 accent-[var(--accent)]"
+                                />
+                                <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{item.name}</span>
+                                <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">
+                                  {formatINR(item.mrp)}
+                                </span>
+                                {qty !== undefined && (
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={qty}
+                                    onChange={(e) => setItemQty(item.id, Number(e.target.value) || 1)}
+                                    className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
+                                  />
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </details>
+                    ))}
+                  </div>
                 )}
                 <button
                   onClick={addBoxToHamper}
@@ -373,7 +398,6 @@ export default function HamperBuilder({
 
       {showManager && (
         <BoxManagerModal
-          items={items}
           hamperConfig={hamperConfig}
           onClose={() => setShowManager(false)}
           onChange={onHamperConfigChange}
