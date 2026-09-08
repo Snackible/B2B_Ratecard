@@ -222,7 +222,9 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
                   <>Discount {discountPercent > 0 ? `(${discountPercent}%)` : ""}</>
                 )}
               </td>
-              <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(discountAmount)}</td>
+              <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>
+                {formatINR(discountAmount > 0 ? -discountAmount : 0)}
+              </td>
             </tr>
             {hasBoxes && (
               <tr className={`${footerBg} font-semibold`}>

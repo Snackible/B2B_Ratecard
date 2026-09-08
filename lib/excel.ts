@@ -137,7 +137,10 @@ export async function buildRateCardExcel({
   }
 
   addFooterRow("Subtotal", itemsSubtotal);
-  addFooterRow(`Discount${discountPercent > 0 ? ` (${discountPercent}%)` : ""}`, discountAmount);
+  addFooterRow(
+    `Discount${discountPercent > 0 ? ` (${discountPercent}%)` : ""}`,
+    discountAmount > 0 ? -discountAmount : 0
+  );
   if (isHamper) {
     addFooterRow("Box cost", boxCostTotal);
     addFooterRow("Add-ons", addOnsTotal);

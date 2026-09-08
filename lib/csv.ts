@@ -61,7 +61,15 @@ export function buildRateCardCsv({
 
   out.push([]);
   out.push(["Subtotal", "", "", "", "", "", itemsSubtotal]);
-  out.push([`Discount${discountPercent > 0 ? ` (${discountPercent}%)` : ""}`, "", "", "", "", "", discountAmount]);
+  out.push([
+    `Discount${discountPercent > 0 ? ` (${discountPercent}%)` : ""}`,
+    "",
+    "",
+    "",
+    "",
+    "",
+    discountAmount > 0 ? -discountAmount : 0,
+  ]);
   if (orderType === "hamper") {
     out.push(["Box cost", "", "", "", "", "", boxCostTotal]);
     out.push(["Add-ons", "", "", "", "", "", addOnsTotal]);
