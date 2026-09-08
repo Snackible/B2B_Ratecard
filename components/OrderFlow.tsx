@@ -14,6 +14,7 @@ import type {
   RateCardSnapshot,
 } from "@/lib/types";
 import { buildRows } from "@/lib/rows";
+import { buildRateCardCsv, downloadCsv } from "@/lib/csv";
 import OrderTypeSelect from "./OrderTypeSelect";
 import BulkBuilder from "./BulkBuilder";
 import HamperBuilder from "./HamperBuilder";
@@ -297,6 +298,21 @@ export default function OrderFlow({
     }
   }
 
+  function handleDownloadCsv() {
+    if (!orderType) return;
+    const csv = buildRateCardCsv({
+      orderType,
+      rows: isHamper ? [] : selectedRows,
+      boxInstances: isHamper ? boxInstances : undefined,
+      discountPercent,
+      transportCostEnabled: transportEnabledForSave,
+      transportCostAmount: transportAmountForSave,
+      addOnSelections: isHamper ? addOnSelections : [],
+    });
+    const filename = clientName.trim() ? `ratecard-${clientName.trim()}.csv` : "ratecard.csv";
+    downloadCsv(filename.replace(/\s+/g, "-").toLowerCase(), csv);
+  }
+
   async function handleAddItem(input: NewItemInput) {
     const res = await fetch("/api/items", {
       method: "POST",
@@ -421,6 +437,12 @@ export default function OrderFlow({
             </button>
             <div className="ml-auto flex items-center gap-3">
               {message && <span className="text-xs text-[var(--text-muted)]">{message}</span>}
+              <button
+                onClick={handleDownloadCsv}
+                className="rounded-md border border-[var(--input-border)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.97]"
+              >
+                Download CSV
+              </button>
               <button
                 onClick={handleSaveAndDownload}
                 disabled={busy}
