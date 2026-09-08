@@ -106,10 +106,6 @@ export default function BulkBuilder({
       </div>
 
       <div className="flex flex-wrap items-center gap-5 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
-        <DiscountPicker value={discountPercent} onChange={onDiscountChange} />
-
-        <div className="h-8 w-px bg-[var(--panel-border)]" aria-hidden />
-
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -155,6 +151,10 @@ export default function BulkBuilder({
             </div>
           )}
         </div>
+
+        <div className="h-8 w-px bg-[var(--panel-border)]" aria-hidden />
+
+        <DiscountPicker value={discountPercent} onChange={onDiscountChange} />
 
         <div className="ml-auto">
           <button
