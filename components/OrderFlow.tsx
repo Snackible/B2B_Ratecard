@@ -114,6 +114,14 @@ export default function OrderFlow({
     });
   }
 
+  function setRowQuantity(key: string, quantity: number) {
+    setQuantities((prev) => {
+      const next = new Map(prev);
+      next.set(key, quantity);
+      return next;
+    });
+  }
+
   function addBoxInstance(instance: HamperBoxInstance) {
     setBoxInstances((prev) => [...prev, instance]);
   }
@@ -450,6 +458,8 @@ export default function OrderFlow({
               clientName={clientName}
               transportCostEnabled={previewProps.transportCostEnabled}
               transportCostAmount={previewProps.transportCostAmount}
+              onQuantityChange={orderType === "bulk" ? setRowQuantity : undefined}
+              onRemove={orderType === "bulk" ? toggleRow : undefined}
             />
           </div>
         </div>
