@@ -14,6 +14,7 @@ import type {
 } from "@/lib/types";
 import { buildRows } from "@/lib/rows";
 import { buildRateCardCsv, downloadCsv } from "@/lib/csv";
+import { buildRateCardExcel, downloadExcel } from "@/lib/excel";
 import OrderTypeSelect from "./OrderTypeSelect";
 import BulkBuilder from "./BulkBuilder";
 import HamperBuilder from "./HamperBuilder";
@@ -67,6 +68,7 @@ export default function OrderFlow({
   const [transportCostEnabled, setTransportCostEnabled] = useState(initialSnapshot?.transportCostEnabled ?? false);
 
   const [busy, setBusy] = useState(false);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [message, setMessage] = useState<string | null>(() => {
     if (!initialSnapshot) return null;
     return editId
@@ -312,6 +314,22 @@ export default function OrderFlow({
     downloadCsv(filename.replace(/\s+/g, "-").toLowerCase(), csv);
   }
 
+  async function handleDownloadExcel() {
+    if (!orderType) return;
+    const buffer = await buildRateCardExcel({
+      orderType,
+      rows: isHamper ? [] : selectedRows,
+      boxInstances: isHamper ? boxInstances : undefined,
+      discountPercent,
+      transportCostEnabled: transportEnabledForSave,
+      transportCostAmount: transportAmountForSave,
+      clientName,
+      showClientName,
+    });
+    const filename = clientName.trim() ? `ratecard-${clientName.trim()}.xlsx` : "ratecard.xlsx";
+    downloadExcel(filename.replace(/\s+/g, "-").toLowerCase(), buffer);
+  }
+
   async function handleAddItem(input: NewItemInput) {
     const res = await fetch("/api/items", {
       method: "POST",
@@ -433,12 +451,42 @@ export default function OrderFlow({
             </button>
             <div className="ml-auto flex items-center gap-3">
               {message && <span className="text-xs text-[var(--text-muted)]">{message}</span>}
-              <button
-                onClick={handleDownloadCsv}
-                className="rounded-md border border-[var(--input-border)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.97]"
+              <div
+                className="relative"
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setShowDownloadMenu(false);
+                }}
               >
-                Download CSV
-              </button>
+                <button
+                  onClick={() => setShowDownloadMenu((v) => !v)}
+                  className="flex items-center gap-1 rounded-md border border-[var(--input-border)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.97]"
+                >
+                  Download
+                  <span aria-hidden>▾</span>
+                </button>
+                {showDownloadMenu && (
+                  <div className="absolute right-0 z-10 mt-1 w-40 overflow-hidden rounded-md border border-[var(--input-border)] bg-[var(--panel-bg)] shadow-lg">
+                    <button
+                      onClick={() => {
+                        setShowDownloadMenu(false);
+                        handleDownloadCsv();
+                      }}
+                      className="block w-full px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
+                    >
+                      CSV
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDownloadMenu(false);
+                        handleDownloadExcel();
+                      }}
+                      className="block w-full px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
+                    >
+                      Excel (.xlsx)
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleSaveAndDownload}
                 disabled={busy}
