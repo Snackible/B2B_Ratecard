@@ -27,6 +27,7 @@ type Props = {
   onToggleBoxAddOn: (boxKey: string, addOnId: string, enabled: boolean) => void;
   onBoxAddOnQuantityChange: (boxKey: string, addOnId: string, quantity: number) => void;
   onBoxAddOnTotalChange: (boxKey: string, addOnId: string, total: number) => void;
+  onBoxAddOnPerBoxChange: (boxKey: string, addOnId: string, perBox: boolean) => void;
   onAddOnCostPerUnitChange: (addOnId: string, costPerUnit: number) => void;
   onNext: () => void;
 };
@@ -50,6 +51,7 @@ export default function HamperBuilder({
   onToggleBoxAddOn,
   onBoxAddOnQuantityChange,
   onBoxAddOnTotalChange,
+  onBoxAddOnPerBoxChange,
   onAddOnCostPerUnitChange,
   onNext,
 }: Props) {
@@ -425,12 +427,22 @@ export default function HamperBuilder({
                           </label>
                           {sel && (
                             <div className="flex items-center gap-2 text-[var(--text-muted)]">
+                              <label className="flex items-center gap-1" title="Quantity follows this box's own quantity">
+                                <input
+                                  type="checkbox"
+                                  checked={sel.perBox}
+                                  onChange={(e) => onBoxAddOnPerBoxChange(b.key, addOn.id, e.target.checked)}
+                                  className="h-3.5 w-3.5 accent-[var(--accent)]"
+                                />
+                                Per box
+                              </label>
                               <label className="flex items-center gap-1">
                                 Qty
                                 <input
                                   type="number"
                                   min={1}
                                   value={sel.quantity}
+                                  disabled={sel.perBox}
                                   onChange={(e) =>
                                     onBoxAddOnQuantityChange(
                                       b.key,
@@ -438,7 +450,7 @@ export default function HamperBuilder({
                                       Math.max(1, Number(e.target.value) || 1)
                                     )
                                   }
-                                  className="w-12 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
+                                  className="w-12 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)] disabled:opacity-50"
                                 />
                               </label>
                               <label className="flex items-center gap-1">

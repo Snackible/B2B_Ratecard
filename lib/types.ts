@@ -63,6 +63,8 @@ export type AddOnSelection = {
   addOnId: string;
   name: string;
   costPerUnit: number;
+  /** When true, quantity always tracks the box instance's quantity (e.g. 1 per box) and isn't hand-edited. */
+  perBox: boolean;
   quantity: number;
   /** quantity x costPerUnit, unless manually overridden by typing a total directly. */
   total: number;

@@ -140,7 +140,8 @@ export default function OrderFlow({
   }
 
   // Quantity change: re-derive boxCost/transportCost from the box template's
-  // per-box rate x quantity, unless that field was manually overridden.
+  // per-box rate x quantity, unless that field was manually overridden. Any
+  // add-on marked "per box" follows the same box quantity.
   function updateBoxInstanceQuantity(key: string, quantity: number) {
     setBoxInstances((prev) =>
       prev.map((b) => {
@@ -151,6 +152,11 @@ export default function OrderFlow({
           quantity,
           boxCost: b.boxCostManual || !template ? b.boxCost : template.cost * quantity,
           transportCost: b.transportCostManual || !template ? b.transportCost : template.transportCost * quantity,
+          addOnSelections: b.addOnSelections.map((a) =>
+            a.perBox
+              ? { ...a, quantity, total: a.totalManual ? a.total : quantity * a.costPerUnit }
+              : a
+          ),
         };
       })
     );
@@ -166,7 +172,9 @@ export default function OrderFlow({
     );
   }
 
-  // Add-ons are chosen per box, not once for the whole hamper.
+  // Add-ons are chosen per box, not once for the whole hamper. A selection
+  // defaults to "per box" so its quantity/total follow the box's own
+  // quantity (e.g. 20 boxes -> 20x the add-on) until unchecked.
   function toggleBoxAddOn(boxKey: string, addOnId: string, enabled: boolean) {
     setBoxInstances((prev) =>
       prev.map((b) => {
@@ -179,7 +187,15 @@ export default function OrderFlow({
           ...b,
           addOnSelections: [
             ...b.addOnSelections,
-            { addOnId, name: addOn.name, costPerUnit: addOn.costPerUnit, quantity: 1, total: addOn.costPerUnit, totalManual: false },
+            {
+              addOnId,
+              name: addOn.name,
+              costPerUnit: addOn.costPerUnit,
+              perBox: true,
+              quantity: b.quantity,
+              total: b.quantity * addOn.costPerUnit,
+              totalManual: false,
+            },
           ],
         };
       })
@@ -200,6 +216,29 @@ export default function OrderFlow({
               ),
             }
       )
+    );
+  }
+
+  // Toggling "per box" off freezes the quantity at its current value so it can be
+  // hand-edited; toggling it on snaps the quantity back to the box's own quantity.
+  function setBoxAddOnPerBox(boxKey: string, addOnId: string, perBox: boolean) {
+    setBoxInstances((prev) =>
+      prev.map((b) => {
+        if (b.key !== boxKey) return b;
+        return {
+          ...b,
+          addOnSelections: b.addOnSelections.map((a) => {
+            if (a.addOnId !== addOnId) return a;
+            const quantity = perBox ? b.quantity : a.quantity;
+            return {
+              ...a,
+              perBox,
+              quantity,
+              total: a.totalManual ? a.total : quantity * a.costPerUnit,
+            };
+          }),
+        };
+      })
     );
   }
 
@@ -249,48 +288,61 @@ export default function OrderFlow({
     return toJpeg(exportRef.current, { quality: 0.95, backgroundColor: "#ffffff", pixelRatio: 2 });
   }
 
+  // Saves the rate card to the backend (used by every download path, not just JPEG) so
+  // any download leaves a record in Saved Rate Cards. Requires a rendered JPEG because
+  // the API stores it as the card's thumbnail regardless of which format is downloaded.
+  async function persistRateCard(dataUrl: string): Promise<void> {
+    const res = await fetch(editId ? `/api/ratecards/${editId}` : "/api/ratecards", {
+      method: editId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderType,
+        clientName: clientName.trim() || null,
+        showClientName,
+        discountPercent,
+        transportCostEnabled: transportEnabledForSave,
+        transportCostAmount: transportAmountForSave,
+        boxCostTotal: isHamper ? boxCostTotal : 0,
+        addOnsCostTotal: isHamper ? addOnsCostTotal : 0,
+        lineItems: isHamper
+          ? []
+          : selectedRows.map((r) => ({
+              itemId: r.itemId,
+              name: r.name,
+              category: r.category,
+              packLabel: r.packLabel,
+              grammage: r.grammage,
+              shelfLifeDays: r.shelfLifeDays,
+              mrp: r.mrp,
+              quantity: r.quantity,
+            })),
+        boxInstances: isHamper ? boxInstances : undefined,
+        imageDataUrl: dataUrl,
+      }),
+    });
+    if (!res.ok) throw new Error("Save failed");
+  }
+
+  function requireClientName(): boolean {
+    if (clientName.trim()) return true;
+    setMessage("Enter a client name before saving.");
+    return false;
+  }
+
   async function handleSaveAndDownload() {
-    if (!orderType || !canProceedFromBuild) return;
+    if (!orderType || !canProceedFromBuild || !requireClientName()) return;
     setBusy(true);
     setMessage(null);
     try {
       const dataUrl = await renderJpeg();
 
       const a = document.createElement("a");
-      const filename = clientName.trim() ? `ratecard-${clientName.trim()}.jpg` : "ratecard.jpg";
+      const filename = `ratecard-${clientName.trim()}.jpg`;
       a.href = dataUrl;
       a.download = filename.replace(/\s+/g, "-").toLowerCase();
       a.click();
 
-      const res = await fetch(editId ? `/api/ratecards/${editId}` : "/api/ratecards", {
-        method: editId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderType,
-          clientName: clientName.trim() || null,
-          showClientName,
-          discountPercent,
-          transportCostEnabled: transportEnabledForSave,
-          transportCostAmount: transportAmountForSave,
-          boxCostTotal: isHamper ? boxCostTotal : 0,
-          addOnsCostTotal: isHamper ? addOnsCostTotal : 0,
-          lineItems: isHamper
-            ? []
-            : selectedRows.map((r) => ({
-                itemId: r.itemId,
-                name: r.name,
-                category: r.category,
-                packLabel: r.packLabel,
-                grammage: r.grammage,
-                shelfLifeDays: r.shelfLifeDays,
-                mrp: r.mrp,
-                quantity: r.quantity,
-              })),
-          boxInstances: isHamper ? boxInstances : undefined,
-          imageDataUrl: dataUrl,
-        }),
-      });
-      if (!res.ok) throw new Error("Save failed");
+      await persistRateCard(dataUrl);
       setMessage(editId ? "Updated and downloaded." : "Saved and downloaded.");
       router.refresh();
     } catch {
@@ -300,34 +352,56 @@ export default function OrderFlow({
     }
   }
 
-  function handleDownloadCsv() {
-    if (!orderType) return;
-    const csv = buildRateCardCsv({
-      orderType,
-      rows: isHamper ? [] : selectedRows,
-      boxInstances: isHamper ? boxInstances : undefined,
-      discountPercent,
-      transportCostEnabled: transportEnabledForSave,
-      transportCostAmount: transportAmountForSave,
-    });
-    const filename = clientName.trim() ? `ratecard-${clientName.trim()}.csv` : "ratecard.csv";
-    downloadCsv(filename.replace(/\s+/g, "-").toLowerCase(), csv);
+  async function handleDownloadCsv() {
+    if (!orderType || !canProceedFromBuild || !requireClientName()) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const dataUrl = await renderJpeg();
+      await persistRateCard(dataUrl);
+      const csv = buildRateCardCsv({
+        orderType,
+        rows: isHamper ? [] : selectedRows,
+        boxInstances: isHamper ? boxInstances : undefined,
+        discountPercent,
+        transportCostEnabled: transportEnabledForSave,
+        transportCostAmount: transportAmountForSave,
+      });
+      downloadCsv(`ratecard-${clientName.trim()}.csv`.replace(/\s+/g, "-").toLowerCase(), csv);
+      setMessage(editId ? "Updated and downloaded." : "Saved and downloaded.");
+      router.refresh();
+    } catch {
+      setMessage("Could not save/download the rate card.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleDownloadExcel() {
-    if (!orderType) return;
-    const buffer = await buildRateCardExcel({
-      orderType,
-      rows: isHamper ? [] : selectedRows,
-      boxInstances: isHamper ? boxInstances : undefined,
-      discountPercent,
-      transportCostEnabled: transportEnabledForSave,
-      transportCostAmount: transportAmountForSave,
-      clientName,
-      showClientName,
-    });
-    const filename = clientName.trim() ? `ratecard-${clientName.trim()}.xlsx` : "ratecard.xlsx";
-    downloadExcel(filename.replace(/\s+/g, "-").toLowerCase(), buffer);
+    if (!orderType || !canProceedFromBuild || !requireClientName()) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const dataUrl = await renderJpeg();
+      await persistRateCard(dataUrl);
+      const buffer = await buildRateCardExcel({
+        orderType,
+        rows: isHamper ? [] : selectedRows,
+        boxInstances: isHamper ? boxInstances : undefined,
+        discountPercent,
+        transportCostEnabled: transportEnabledForSave,
+        transportCostAmount: transportAmountForSave,
+        clientName,
+        showClientName,
+      });
+      downloadExcel(`ratecard-${clientName.trim()}.xlsx`.replace(/\s+/g, "-").toLowerCase(), buffer);
+      setMessage(editId ? "Updated and downloaded." : "Saved and downloaded.");
+      router.refresh();
+    } catch {
+      setMessage("Could not save/download the rate card.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleAddItem(input: NewItemInput) {
@@ -412,6 +486,7 @@ export default function OrderFlow({
               onToggleBoxAddOn={toggleBoxAddOn}
               onBoxAddOnQuantityChange={setBoxAddOnQuantity}
               onBoxAddOnTotalChange={setBoxAddOnTotal}
+              onBoxAddOnPerBoxChange={setBoxAddOnPerBox}
               onAddOnCostPerUnitChange={setAddOnCostPerUnit}
               onNext={() => setStep("preview")}
             />
@@ -471,9 +546,11 @@ export default function OrderFlow({
               >
                 <button
                   onClick={() => setShowDownloadMenu((v) => !v)}
-                  className="flex items-center gap-1 rounded-md border border-[var(--input-border)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.97]"
+                  disabled={busy || !clientName.trim()}
+                  title={!clientName.trim() ? "Enter a client name first" : undefined}
+                  className="flex items-center gap-1 rounded-md border border-[var(--input-border)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.97] disabled:opacity-50"
                 >
-                  Download
+                  {busy ? "Saving..." : "Download"}
                   <span aria-hidden>▾</span>
                 </button>
                 {showDownloadMenu && (
@@ -501,7 +578,8 @@ export default function OrderFlow({
               </div>
               <button
                 onClick={handleSaveAndDownload}
-                disabled={busy}
+                disabled={busy || !clientName.trim()}
+                title={!clientName.trim() ? "Enter a client name first" : undefined}
                 className="rounded-md bg-[var(--accent)] px-3.5 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
               >
                 {busy ? "Saving..." : editId ? "Update & Download JPEG" : "Save & Download JPEG"}

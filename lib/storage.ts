@@ -548,7 +548,7 @@ export async function getRateCard(id: string): Promise<RateCardSnapshot | null> 
       quantity: b.quantity ?? 1,
       boxCostManual: b.boxCostManual ?? false,
       transportCostManual: b.transportCostManual ?? false,
-      addOnSelections: b.addOnSelections ?? [],
+      addOnSelections: (b.addOnSelections ?? []).map((a) => ({ ...a, perBox: a.perBox ?? true })),
     })),
   };
 }
