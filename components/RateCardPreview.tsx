@@ -87,7 +87,7 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
       <div className={`flex items-center justify-between px-6 py-3 text-sm ${metaText}`}>
         <div>
           {showClientName && clientName.trim() ? (
-            <span className="font-semibold">Prepared for: {clientName.trim()}</span>
+            <span className="font-semibold">Client: {clientName.trim()}</span>
           ) : (
             <span>&nbsp;</span>
           )}

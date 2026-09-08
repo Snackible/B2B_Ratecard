@@ -539,52 +539,52 @@ export default function OrderFlow({
             </button>
             <div className="ml-auto flex items-center gap-3">
               {message && <span className="text-xs text-[var(--text-muted)]">{message}</span>}
-              <div
-                className="relative"
-                onBlur={(e) => {
-                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setShowDownloadMenu(false);
-                }}
-              >
-                <button
-                  onClick={() => setShowDownloadMenu((v) => !v)}
-                  disabled={busy || !clientName.trim()}
-                  title={!clientName.trim() ? "Enter a client name first" : undefined}
-                  className="flex items-center gap-1 rounded-md border border-[var(--input-border)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.97] disabled:opacity-50"
-                >
-                  {busy ? "Saving..." : "Download"}
-                  <span aria-hidden>▾</span>
-                </button>
-                {showDownloadMenu && (
-                  <div className="absolute right-0 z-10 mt-1 w-40 overflow-hidden rounded-md border border-[var(--input-border)] bg-[var(--panel-bg)] shadow-lg">
-                    <button
-                      onClick={() => {
-                        setShowDownloadMenu(false);
-                        handleDownloadCsv();
-                      }}
-                      className="block w-full px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
-                    >
-                      CSV
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowDownloadMenu(false);
-                        handleDownloadExcel();
-                      }}
-                      className="block w-full px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
-                    >
-                      Excel (.xlsx)
-                    </button>
-                  </div>
-                )}
-              </div>
               <button
                 onClick={handleSaveAndDownload}
                 disabled={busy || !clientName.trim()}
                 title={!clientName.trim() ? "Enter a client name first" : undefined}
-                className="rounded-md bg-[var(--accent)] px-3.5 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
+                className="rounded-md border border-[var(--input-border)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.97] disabled:opacity-50"
               >
                 {busy ? "Saving..." : editId ? "Update & Download JPEG" : "Save & Download JPEG"}
               </button>
+              <div className="flex items-stretch">
+                <button
+                  onClick={handleDownloadExcel}
+                  disabled={busy || !clientName.trim()}
+                  title={!clientName.trim() ? "Enter a client name first" : undefined}
+                  className="rounded-l-md bg-[var(--accent)] px-3.5 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
+                >
+                  {busy ? "Saving..." : editId ? "Update & Download Excel" : "Save & Download Excel"}
+                </button>
+                <div
+                  className="relative"
+                  onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) setShowDownloadMenu(false);
+                  }}
+                >
+                  <button
+                    onClick={() => setShowDownloadMenu((v) => !v)}
+                    disabled={busy || !clientName.trim()}
+                    aria-label="Other download formats"
+                    className="h-full rounded-r-md border-l border-[var(--accent-fg)]/20 bg-[var(--accent)] px-2 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
+                  >
+                    <span aria-hidden>▾</span>
+                  </button>
+                  {showDownloadMenu && (
+                    <div className="absolute right-0 z-10 mt-1 w-32 overflow-hidden rounded-md border border-[var(--input-border)] bg-[var(--panel-bg)] shadow-lg">
+                      <button
+                        onClick={() => {
+                          setShowDownloadMenu(false);
+                          handleDownloadCsv();
+                        }}
+                        className="block w-full px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
+                      >
+                        CSV
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

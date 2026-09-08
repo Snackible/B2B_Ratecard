@@ -72,7 +72,7 @@ export async function buildRateCardExcel({
   const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   sheet.mergeCells(2, 1, 2, colCount - 1);
   const clientCell = sheet.getCell(2, 1);
-  clientCell.value = showClientName && clientName.trim() ? `Prepared for: ${clientName.trim()}` : "";
+  clientCell.value = showClientName && clientName.trim() ? `Client: ${clientName.trim()}` : "";
   clientCell.font = { italic: true, color: { argb: "FF444444" } };
   const dateCell = sheet.getCell(2, colCount);
   dateCell.value = `Date: ${today}`;
