@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import type { Item, NewItemInput } from "@/lib/types";
 import { buildRows } from "@/lib/rows";
 import SegmentList from "./SegmentList";
-import DiscountPicker from "./DiscountPicker";
 import AddItemModal from "./AddItemModal";
 
 type Props = {
@@ -15,8 +14,6 @@ type Props = {
   quantities: Map<string, number>;
   onToggle: (key: string) => void;
   onQuantityChange: (key: string, quantity: number) => void;
-  discountPercent: number;
-  onDiscountChange: (percent: number) => void;
   clientName: string;
   onClientNameChange: (name: string) => void;
   showClientName: boolean;
@@ -36,8 +33,6 @@ export default function BulkBuilder({
   quantities,
   onToggle,
   onQuantityChange,
-  discountPercent,
-  onDiscountChange,
   clientName,
   onClientNameChange,
   showClientName,
@@ -151,10 +146,6 @@ export default function BulkBuilder({
             </div>
           )}
         </div>
-
-        <div className="h-8 w-px bg-[var(--panel-border)]" aria-hidden />
-
-        <DiscountPicker value={discountPercent} onChange={onDiscountChange} />
 
         <div className="ml-auto">
           <button

@@ -2,10 +2,12 @@ import { forwardRef } from "react";
 import type { SelectedRow } from "@/lib/rows";
 import { applyDiscount, formatINR } from "@/lib/rows";
 import type { HamperBoxInstance } from "@/lib/types";
+import DiscountPicker from "./DiscountPicker";
 
 type Props = {
   rows: SelectedRow[];
   discountPercent: number;
+  onDiscountChange?: (percent: number) => void;
   showClientName: boolean;
   clientName: string;
   onRemove?: (key: string) => void;
@@ -23,6 +25,7 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
   {
     rows,
     discountPercent,
+    onDiscountChange,
     showClientName,
     clientName,
     onRemove,
@@ -211,7 +214,13 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
             </tr>
             <tr className={`${footerBg} font-semibold`}>
               <td className={`border ${cellBorder} px-3 py-2 text-right`}>
-                Discount {discountPercent > 0 ? `(${discountPercent}%)` : ""}
+                {onDiscountChange ? (
+                  <div className="flex justify-end">
+                    <DiscountPicker value={discountPercent} onChange={onDiscountChange} hideLabel />
+                  </div>
+                ) : (
+                  <>Discount {discountPercent > 0 ? `(${discountPercent}%)` : ""}</>
+                )}
               </td>
               <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(discountAmount)}</td>
             </tr>

@@ -478,8 +478,6 @@ export default function OrderFlow({
               onUpdateBoxInstanceCost={updateBoxInstanceCost}
               onUpdateBoxInstanceQuantity={updateBoxInstanceQuantity}
               onUpdateBoxInstanceLineItemQuantity={updateBoxInstanceLineItemQuantity}
-              discountPercent={discountPercent}
-              onDiscountChange={setDiscountPercent}
               clientName={clientName}
               onClientNameChange={setClientName}
               showClientName={showClientName}
@@ -500,8 +498,6 @@ export default function OrderFlow({
               quantities={quantities}
               onToggle={toggleRow}
               onQuantityChange={setRowQuantity}
-              discountPercent={discountPercent}
-              onDiscountChange={setDiscountPercent}
               clientName={clientName}
               onClientNameChange={setClientName}
               showClientName={showClientName}
@@ -594,6 +590,7 @@ export default function OrderFlow({
               rows={previewProps.rows}
               boxInstances={previewProps.boxInstances}
               discountPercent={discountPercent}
+              onDiscountChange={setDiscountPercent}
               showClientName={showClientName}
               clientName={clientName}
               transportCostEnabled={previewProps.transportCostEnabled}

@@ -6,16 +6,17 @@ import { DISCOUNT_OPTIONS } from "@/lib/types";
 type Props = {
   value: number;
   onChange: (percent: number) => void;
+  hideLabel?: boolean;
 };
 
-export default function DiscountPicker({ value, onChange }: Props) {
+export default function DiscountPicker({ value, onChange, hideLabel }: Props) {
   const isPreset = (DISCOUNT_OPTIONS as readonly number[]).includes(value);
   const [customMode, setCustomMode] = useState(!isPreset && value > 0);
   const [customValue, setCustomValue] = useState(isPreset ? "" : value ? String(value) : "");
 
   return (
     <div>
-      <div className="mb-1.5 text-xs font-medium text-[var(--text-muted)]">Discount</div>
+      {!hideLabel && <div className="mb-1.5 text-xs font-medium text-[var(--text-muted)]">Discount</div>}
       <div className="flex flex-wrap gap-1">
         {DISCOUNT_OPTIONS.map((d) => (
           <button
