@@ -341,6 +341,17 @@ export default function OrderFlow({
     setItems((prev) => [...prev, created]);
   }
 
+  async function handleUpdateItem(itemId: string, input: NewItemInput) {
+    const res = await fetch(`/api/items/${itemId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) throw new Error("Failed to update item");
+    const updated: Item = await res.json();
+    setItems((prev) => prev.map((i) => (i.id === itemId ? updated : i)));
+  }
+
   async function handleDeleteItem(itemId: string) {
     setItems((prev) => prev.filter((i) => i.id !== itemId));
     setQuantities((prev) => {
@@ -408,6 +419,7 @@ export default function OrderFlow({
             <BulkBuilder
               items={items}
               onAddItem={handleAddItem}
+              onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
               quantities={quantities}
               onToggle={toggleRow}

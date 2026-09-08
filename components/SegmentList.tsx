@@ -18,9 +18,10 @@ type Props = {
   selectedKeys: Set<string>;
   onToggle: (key: string) => void;
   onDeleteItem: (itemId: string) => void;
+  onEditItem: (itemId: string) => void;
 };
 
-export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem }: Props) {
+export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem, onEditItem }: Props) {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -61,7 +62,14 @@ export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem
           <ul className="space-y-1">
             {filtered.length === 0 && <li className="text-sm text-[var(--text-faint)] italic">No matches</li>}
             {filtered.map((row) => (
-              <Row key={row.key} row={row} checked={selectedKeys.has(row.key)} onToggle={onToggle} onDeleteItem={onDeleteItem} />
+              <Row
+                key={row.key}
+                row={row}
+                checked={selectedKeys.has(row.key)}
+                onToggle={onToggle}
+                onDeleteItem={onDeleteItem}
+                onEditItem={onEditItem}
+              />
             ))}
           </ul>
         ) : (
@@ -88,6 +96,7 @@ export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem
                           checked={selectedKeys.has(row.key)}
                           onToggle={onToggle}
                           onDeleteItem={onDeleteItem}
+                          onEditItem={onEditItem}
                         />
                       ))}
                     </ul>
@@ -107,11 +116,13 @@ function Row({
   checked,
   onToggle,
   onDeleteItem,
+  onEditItem,
 }: {
   row: CatalogRow;
   checked: boolean;
   onToggle: (key: string) => void;
   onDeleteItem: (itemId: string) => void;
+  onEditItem: (itemId: string) => void;
 }) {
   function handleDelete() {
     const ok = window.confirm(
@@ -133,6 +144,15 @@ function Row({
         <span className="shrink-0 text-xs text-[var(--text-faint)]">({row.packLabel})</span>
         <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">{formatINR(row.mrp)}</span>
       </label>
+      <button
+        type="button"
+        onClick={() => onEditItem(row.itemId)}
+        title="Edit item"
+        aria-label={`Edit ${row.name}`}
+        className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-faint)] opacity-0 group-hover:opacity-100 hover:text-[var(--accent)] focus-visible:opacity-100"
+      >
+        ✎
+      </button>
       <button
         type="button"
         onClick={handleDelete}

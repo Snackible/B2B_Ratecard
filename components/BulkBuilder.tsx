@@ -10,6 +10,7 @@ import AddItemModal from "./AddItemModal";
 type Props = {
   items: Item[];
   onAddItem: (input: NewItemInput) => Promise<void>;
+  onUpdateItem: (itemId: string, input: NewItemInput) => Promise<void>;
   onDeleteItem: (itemId: string) => void;
   quantities: Map<string, number>;
   onToggle: (key: string) => void;
@@ -29,6 +30,7 @@ type Props = {
 export default function BulkBuilder({
   items,
   onAddItem,
+  onUpdateItem,
   onDeleteItem,
   quantities,
   onToggle,
@@ -44,10 +46,11 @@ export default function BulkBuilder({
   onTransportCostChange,
   onNext,
 }: Props) {
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [modalItem, setModalItem] = useState<Item | "new" | null>(null);
   const [transportInput, setTransportInput] = useState(String(transportCost));
 
   const rows = useMemo(() => buildRows(items), [items]);
+  const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const selectedKeys = useMemo(() => new Set(quantities.keys()), [quantities]);
   const existingCategories = useMemo(
     () => [...new Set(items.map((i) => i.category))].sort((a, b) => a.localeCompare(b)),
@@ -78,14 +81,23 @@ export default function BulkBuilder({
         <div className="mb-3 flex shrink-0 items-center justify-between">
           <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">Catalog</h2>
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => setModalItem("new")}
             className="rounded-md bg-[var(--secondary-accent)] px-2.5 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
           >
             + Add Item
           </button>
         </div>
         <div className="min-h-0 flex-1">
-          <SegmentList rows={rows} selectedKeys={selectedKeys} onToggle={onToggle} onDeleteItem={onDeleteItem} />
+          <SegmentList
+            rows={rows}
+            selectedKeys={selectedKeys}
+            onToggle={onToggle}
+            onDeleteItem={onDeleteItem}
+            onEditItem={(itemId) => {
+              const item = itemsById.get(itemId);
+              if (item) setModalItem(item);
+            }}
+          />
         </div>
       </div>
 
@@ -151,10 +163,11 @@ export default function BulkBuilder({
         </div>
       </div>
 
-      {showAddModal && (
+      {modalItem && (
         <AddItemModal
-          onClose={() => setShowAddModal(false)}
-          onAdd={onAddItem}
+          onClose={() => setModalItem(null)}
+          onSubmit={modalItem === "new" ? onAddItem : (input) => onUpdateItem(modalItem.id, input)}
+          editItem={modalItem === "new" ? null : modalItem}
           existingCategories={existingCategories}
           existingSections={existingSections}
         />

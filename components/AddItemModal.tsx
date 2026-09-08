@@ -1,31 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import type { NewItemInput, Segment } from "@/lib/types";
+import type { Item, NewItemInput, Segment } from "@/lib/types";
 
 type Props = {
   onClose: () => void;
-  onAdd: (item: NewItemInput) => Promise<void>;
+  onSubmit: (item: NewItemInput) => Promise<void>;
   existingCategories: string[];
   existingSections: string[];
+  editItem?: Item | null;
 };
 
 const NEW_OPTION = "__new__";
 
-export default function AddItemModal({ onClose, onAdd, existingCategories, existingSections }: Props) {
-  const [form, setForm] = useState({
-    name: "",
-    category: "",
-    section: "",
-    segment: "Standard Grammage" as Segment,
-    grammage: "",
-    mrp: "",
-    largerPackGrammage: "",
-    largerPackMrp: "",
-    shelfLifeDays: "",
-  });
-  const [isNewCategory, setIsNewCategory] = useState(true);
-  const [isNewSection, setIsNewSection] = useState(true);
+function formFromItem(item?: Item | null) {
+  return {
+    name: item?.name ?? "",
+    category: item?.category ?? "",
+    section: item?.section ?? "",
+    segment: (item?.segment ?? "Standard Grammage") as Segment,
+    grammage: item?.grammage != null ? String(item.grammage) : "",
+    mrp: item?.mrp != null ? String(item.mrp) : "",
+    largerPackGrammage: item?.largerPackGrammage != null ? String(item.largerPackGrammage) : "",
+    largerPackMrp: item?.largerPackMrp != null ? String(item.largerPackMrp) : "",
+    shelfLifeDays: item?.shelfLifeDays != null ? String(item.shelfLifeDays) : "",
+  };
+}
+
+export default function AddItemModal({ onClose, onSubmit, existingCategories, existingSections, editItem }: Props) {
+  const isEditing = Boolean(editItem);
+  const [form, setForm] = useState(() => formFromItem(editItem));
+  const [isNewCategory, setIsNewCategory] = useState(!editItem || !existingCategories.includes(editItem.category));
+  const [isNewSection, setIsNewSection] = useState(
+    !editItem || !editItem.section || !existingSections.includes(editItem.section)
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -45,7 +53,7 @@ export default function AddItemModal({ onClose, onAdd, existingCategories, exist
 
     setSubmitting(true);
     try {
-      await onAdd({
+      await onSubmit({
         name: form.name.trim(),
         category: form.category.trim(),
         section: form.segment === "Standard Grammage" ? form.section.trim() || null : null,
@@ -58,7 +66,7 @@ export default function AddItemModal({ onClose, onAdd, existingCategories, exist
       });
       onClose();
     } catch {
-      setError("Could not add item. Please try again.");
+      setError(isEditing ? "Could not save changes. Please try again." : "Could not add item. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -68,7 +76,9 @@ export default function AddItemModal({ onClose, onAdd, existingCategories, exist
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">Add New Item</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
+            {isEditing ? "Edit Item" : "Add New Item"}
+          </h2>
           <button
             onClick={onClose}
             className="rounded-md p-1 text-[var(--text-faint)] hover:bg-[var(--input-bg)] hover:text-[var(--text-secondary)]"
@@ -241,7 +251,7 @@ export default function AddItemModal({ onClose, onAdd, existingCategories, exist
               disabled={submitting}
               className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
-              {submitting ? "Adding..." : "Add Item"}
+              {submitting ? (isEditing ? "Saving..." : "Adding...") : isEditing ? "Save Changes" : "Add Item"}
             </button>
           </div>
         </form>
