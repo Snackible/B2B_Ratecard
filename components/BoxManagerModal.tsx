@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import type { AddOn, Box, HamperConfig } from "@/lib/types";
+import { useMemo, useState } from "react";
+import type { AddOn, Box, HamperConfig, Item, NewItemInput } from "@/lib/types";
 import { formatINR } from "@/lib/rows";
+import AddItemModal from "./AddItemModal";
 
 type Props = {
   hamperConfig: HamperConfig;
   onClose: () => void;
   onChange: (config: HamperConfig) => void;
   onAddOnCostPerUnitChange: (addOnId: string, costPerUnit: number) => void;
+  items: Item[];
+  onAddItem: (input: NewItemInput) => Promise<void>;
 };
 
 type BoxForm = {
@@ -21,14 +24,31 @@ type BoxForm = {
   maxItems: string;
 };
 
-export default function BoxManagerModal({ hamperConfig, onClose, onChange, onAddOnCostPerUnitChange }: Props) {
+export default function BoxManagerModal({
+  hamperConfig,
+  onClose,
+  onChange,
+  onAddOnCostPerUnitChange,
+  items,
+  onAddItem,
+}: Props) {
   const [config, setConfig] = useState(hamperConfig);
   const [newTypeName, setNewTypeName] = useState("");
   const [boxForm, setBoxForm] = useState<BoxForm | null>(null);
   const [newAddOnName, setNewAddOnName] = useState("");
   const [newAddOnCost, setNewAddOnCost] = useState("");
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const existingCategories = useMemo(
+    () => [...new Set(items.map((i) => i.category))].sort((a, b) => a.localeCompare(b)),
+    [items]
+  );
+  const existingSections = useMemo(
+    () => [...new Set(items.map((i) => i.section).filter((s): s is string => Boolean(s)))].sort((a, b) => a.localeCompare(b)),
+    [items]
+  );
 
   async function addAddOnEntry() {
     const costPerUnit = Number(newAddOnCost);
@@ -214,7 +234,7 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange, onAdd
       <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--panel-border)] px-6 py-4">
           <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-            {boxForm ? (boxForm.id ? "Edit Box" : "New Box") : "Manage Hamper Boxes"}
+            {boxForm ? (boxForm.id ? "Edit Box" : "New Box") : "Manage Items"}
           </h2>
           <button
             onClick={boxForm ? () => setBoxForm(null) : onClose}
@@ -230,6 +250,18 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange, onAdd
 
           {!boxForm ? (
             <div className="space-y-5">
+              <div className="flex items-center justify-between rounded-lg border border-[var(--panel-border)] p-3">
+                <div className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">
+                  Catalog Items <span className="font-normal text-[var(--text-faint)]">({items.length})</span>
+                </div>
+                <button
+                  onClick={() => setShowAddItemModal(true)}
+                  className="rounded-md bg-[var(--secondary-accent)] px-2 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
+                >
+                  + Add Item
+                </button>
+              </div>
+
               {config.boxTypes.length === 0 && config.boxes.length === 0 && (
                 <p className="text-sm text-[var(--text-muted)]">No box types yet. Add your first one below.</p>
               )}
@@ -261,7 +293,7 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange, onAdd
                             {(box.minItems !== null || box.maxItems !== null) && (
                               <>
                                 {" "}
-                                &middot; {box.minItems ?? 0}
+                                &middot; {box.minItems ?? 1}
                                 {box.maxItems !== null ? `-${box.maxItems}` : "+"} items
                               </>
                             )}
@@ -316,7 +348,7 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange, onAdd
                             {(box.minItems !== null || box.maxItems !== null) && (
                               <>
                                 {" "}
-                                &middot; {box.minItems ?? 0}
+                                &middot; {box.minItems ?? 1}
                                 {box.maxItems !== null ? `-${box.maxItems}` : "+"} items
                               </>
                             )}
@@ -505,6 +537,15 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange, onAdd
           )}
         </div>
       </div>
+
+      {showAddItemModal && (
+        <AddItemModal
+          onClose={() => setShowAddItemModal(false)}
+          onSubmit={onAddItem}
+          existingCategories={existingCategories}
+          existingSections={existingSections}
+        />
+      )}
     </div>
   );
 }

@@ -469,6 +469,7 @@ export default function OrderFlow({
           {isHamper ? (
             <HamperBuilder
               items={items}
+              onAddItem={handleAddItem}
               hamperConfig={hamperConfig}
               onHamperConfigChange={setHamperConfig}
               boxInstances={boxInstances}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { HamperBoxInstance, HamperConfig, Item } from "@/lib/types";
+import type { HamperBoxInstance, HamperConfig, Item, NewItemInput } from "@/lib/types";
 import { formatINR } from "@/lib/rows";
 import DiscountPicker from "./DiscountPicker";
 import BoxManagerModal from "./BoxManagerModal";
@@ -10,6 +10,7 @@ const UNASSIGNED = "__unassigned__";
 
 type Props = {
   items: Item[];
+  onAddItem: (input: NewItemInput) => Promise<void>;
   hamperConfig: HamperConfig;
   onHamperConfigChange: (config: HamperConfig) => void;
   boxInstances: HamperBoxInstance[];
@@ -34,6 +35,7 @@ type Props = {
 
 export default function HamperBuilder({
   items,
+  onAddItem,
   hamperConfig,
   onHamperConfigChange,
   boxInstances,
@@ -178,7 +180,7 @@ export default function HamperBuilder({
           onClick={() => setShowManager(true)}
           className="rounded-md border border-[var(--input-border)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
         >
-          Manage Boxes
+          Manage Items
         </button>
       </div>
 
@@ -229,7 +231,7 @@ export default function HamperBuilder({
                       {(box.minItems !== null || box.maxItems !== null) && (
                         <>
                           {" "}
-                          &middot; {box.minItems ?? 0}
+                          &middot; {box.minItems ?? 1}
                           {box.maxItems !== null ? `-${box.maxItems}` : "+"} items
                         </>
                       )}
@@ -246,7 +248,7 @@ export default function HamperBuilder({
                     Choose items for &ldquo;{selectedBox.name}&rdquo; ({totalSelectedQty} item
                     {totalSelectedQty === 1 ? "" : "s"}
                     {selectedBox.minItems !== null || selectedBox.maxItems !== null
-                      ? ` / ${selectedBox.minItems ?? 0}${selectedBox.maxItems !== null ? `-${selectedBox.maxItems}` : "+"}`
+                      ? ` / ${selectedBox.minItems ?? 1}${selectedBox.maxItems !== null ? `-${selectedBox.maxItems}` : "+"}`
                       : ""}
                     )
                   </div>
@@ -520,6 +522,8 @@ export default function HamperBuilder({
           onClose={() => setShowManager(false)}
           onChange={onHamperConfigChange}
           onAddOnCostPerUnitChange={onAddOnCostPerUnitChange}
+          items={items}
+          onAddItem={onAddItem}
         />
       )}
     </div>
