@@ -155,7 +155,8 @@ export default function BulkBuilder({
         <div className="ml-auto">
           <button
             onClick={onNext}
-            disabled={selectedKeys.size === 0}
+            disabled={selectedKeys.size === 0 || !clientName.trim()}
+            title={!clientName.trim() ? "Enter a client name first" : undefined}
             className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.98] disabled:opacity-50"
           >
             Next
