@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toJpeg } from "html-to-image";
 import type {
+  AddOnSelection,
   AppSettings,
   HamperBoxInstance,
   HamperConfig,
@@ -19,6 +20,18 @@ import HamperBuilder from "./HamperBuilder";
 import RateCardPreview from "./RateCardPreview";
 
 type Step = "select" | "build" | "preview";
+
+type AddOnState = { enabled: boolean; quantity: number; total: number; totalManual: boolean };
+
+function deriveInitialAddOnStates(snapshot: RateCardSnapshot | null | undefined): Map<string, AddOnState> {
+  const map = new Map<string, AddOnState>();
+  if (snapshot?.orderType === "hamper" && snapshot.addOnSelections) {
+    for (const sel of snapshot.addOnSelections) {
+      map.set(sel.addOnId, { enabled: true, quantity: sel.quantity, total: sel.total, totalManual: sel.totalManual });
+    }
+  }
+  return map;
+}
 
 function deriveInitialQuantities(items: Item[], snapshot: RateCardSnapshot | null | undefined) {
   const map = new Map<string, number>();
@@ -52,7 +65,9 @@ export default function OrderFlow({
   const [items, setItems] = useState(initialItems);
   const [hamperConfig, setHamperConfig] = useState(initialHamperConfig);
   const [transportCost, setTransportCost] = useState(initialSettings.transportCost);
-  const [diyaPackCost, setDiyaPackCost] = useState(initialSettings.diyaPackCost);
+  const [addOnStates, setAddOnStates] = useState<Map<string, AddOnState>>(() =>
+    deriveInitialAddOnStates(initialSnapshot)
+  );
 
   const [quantities, setQuantities] = useState<Map<string, number>>(() =>
     deriveInitialQuantities(initialItems, initialSnapshot)
@@ -65,8 +80,6 @@ export default function OrderFlow({
   const [showClientName, setShowClientName] = useState(initialSnapshot?.showClientName ?? true);
   const [clientName, setClientName] = useState(initialSnapshot?.clientName ?? "");
   const [transportCostEnabled, setTransportCostEnabled] = useState(initialSnapshot?.transportCostEnabled ?? false);
-  const [diyaEnabled, setDiyaEnabled] = useState(initialSnapshot?.diyaEnabled ?? false);
-  const [diyaQuantity, setDiyaQuantity] = useState(initialSnapshot?.diyaQuantity ?? 1);
 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(() => {
@@ -101,7 +114,25 @@ export default function OrderFlow({
   const canProceedFromBuild = isHamper ? boxInstances.length > 0 : selectedRows.length > 0;
   const transportEnabledForSave = isHamper ? true : transportCostEnabled;
   const transportAmountForSave = isHamper ? hamperTransportTotal : transportCost;
-  const diyaCostTotal = isHamper && diyaEnabled ? diyaQuantity * diyaPackCost : 0;
+
+  const addOnSelections: AddOnSelection[] = useMemo(() => {
+    if (!isHamper) return [];
+    const result: AddOnSelection[] = [];
+    for (const addOn of hamperConfig.addOns) {
+      const state = addOnStates.get(addOn.id);
+      if (!state?.enabled) continue;
+      result.push({
+        addOnId: addOn.id,
+        name: addOn.name,
+        costPerUnit: addOn.costPerUnit,
+        quantity: state.quantity,
+        total: state.total,
+        totalManual: state.totalManual,
+      });
+    }
+    return result;
+  }, [isHamper, hamperConfig.addOns, addOnStates]);
+  const addOnsCostTotal = useMemo(() => addOnSelections.reduce((sum, s) => sum + s.total, 0), [addOnSelections]);
 
   function toggleRow(key: string) {
     setQuantities((prev) => {
@@ -120,8 +151,93 @@ export default function OrderFlow({
     setBoxInstances((prev) => prev.filter((b) => b.key !== key));
   }
 
-  function updateBoxInstance(key: string, patch: Partial<Pick<HamperBoxInstance, "boxCost" | "transportCost">>) {
-    setBoxInstances((prev) => prev.map((b) => (b.key === key ? { ...b, ...patch } : b)));
+  // Manual edit of the box-cost/transport-cost line itself: fixes that value and
+  // stops it from following further quantity changes (see updateBoxInstanceQuantity).
+  function updateBoxInstanceCost(key: string, field: "boxCost" | "transportCost", value: number) {
+    const manualField = field === "boxCost" ? "boxCostManual" : "transportCostManual";
+    setBoxInstances((prev) => prev.map((b) => (b.key === key ? { ...b, [field]: value, [manualField]: true } : b)));
+  }
+
+  // Quantity change: re-derive boxCost/transportCost from the box template's
+  // per-box rate x quantity, unless that field was manually overridden.
+  function updateBoxInstanceQuantity(key: string, quantity: number) {
+    setBoxInstances((prev) =>
+      prev.map((b) => {
+        if (b.key !== key) return b;
+        const template = hamperConfig.boxes.find((box) => box.id === b.boxId);
+        return {
+          ...b,
+          quantity,
+          boxCost: b.boxCostManual || !template ? b.boxCost : template.cost * quantity,
+          transportCost: b.transportCostManual || !template ? b.transportCost : template.transportCost * quantity,
+        };
+      })
+    );
+  }
+
+  function updateBoxInstanceLineItemQuantity(key: string, itemId: string, quantity: number) {
+    setBoxInstances((prev) =>
+      prev.map((b) =>
+        b.key === key
+          ? { ...b, lineItems: b.lineItems.map((li) => (li.itemId === itemId ? { ...li, quantity } : li)) }
+          : b
+      )
+    );
+  }
+
+  function toggleAddOn(addOnId: string, enabled: boolean) {
+    setAddOnStates((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(addOnId);
+      if (existing) {
+        next.set(addOnId, { ...existing, enabled });
+      } else {
+        const addOn = hamperConfig.addOns.find((a) => a.id === addOnId);
+        next.set(addOnId, { enabled, quantity: 1, total: addOn?.costPerUnit ?? 0, totalManual: false });
+      }
+      return next;
+    });
+  }
+
+  function setAddOnQuantity(addOnId: string, quantity: number) {
+    setAddOnStates((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(addOnId) ?? { enabled: true, quantity: 1, total: 0, totalManual: false };
+      const addOn = hamperConfig.addOns.find((a) => a.id === addOnId);
+      const total = existing.totalManual || !addOn ? existing.total : quantity * addOn.costPerUnit;
+      next.set(addOnId, { ...existing, quantity, total });
+      return next;
+    });
+  }
+
+  function setAddOnTotal(addOnId: string, total: number) {
+    setAddOnStates((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(addOnId) ?? { enabled: true, quantity: 1, total: 0, totalManual: false };
+      next.set(addOnId, { ...existing, total, totalManual: true });
+      return next;
+    });
+  }
+
+  function setAddOnCostPerUnit(addOnId: string, costPerUnit: number) {
+    setHamperConfig((prev) => ({
+      ...prev,
+      addOns: prev.addOns.map((a) => (a.id === addOnId ? { ...a, costPerUnit } : a)),
+    }));
+    setAddOnStates((prev) => {
+      const existing = prev.get(addOnId);
+      if (!existing || existing.totalManual) return prev;
+      const next = new Map(prev);
+      next.set(addOnId, { ...existing, total: existing.quantity * costPerUnit });
+      return next;
+    });
+    fetch("/api/hamper/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        addOns: hamperConfig.addOns.map((a) => (a.id === addOnId ? { ...a, costPerUnit } : a)),
+      }),
+    }).catch(() => {});
   }
 
   async function renderJpeg(): Promise<string> {
@@ -153,9 +269,7 @@ export default function OrderFlow({
           transportCostEnabled: transportEnabledForSave,
           transportCostAmount: transportAmountForSave,
           boxCostTotal: isHamper ? boxCostTotal : 0,
-          diyaEnabled: isHamper ? diyaEnabled : false,
-          diyaQuantity: isHamper ? diyaQuantity : 0,
-          diyaCostTotal: isHamper ? diyaCostTotal : 0,
+          addOnsCostTotal: isHamper ? addOnsCostTotal : 0,
           lineItems: isHamper
             ? []
             : selectedRows.map((r) => ({
@@ -169,6 +283,7 @@ export default function OrderFlow({
                 quantity: r.quantity,
               })),
           boxInstances: isHamper ? boxInstances : undefined,
+          addOnSelections: isHamper ? addOnSelections : undefined,
           imageDataUrl: dataUrl,
         }),
       });
@@ -221,18 +336,14 @@ export default function OrderFlow({
         boxInstances,
         transportCostEnabled: true,
         transportCostAmount: hamperTransportTotal,
-        diyaEnabled,
-        diyaQuantity,
-        diyaCostTotal,
+        addOnSelections,
       }
     : {
         rows: selectedRows,
         boxInstances: undefined,
         transportCostEnabled,
         transportCostAmount: transportCost,
-        diyaEnabled: false,
-        diyaQuantity: 0,
-        diyaCostTotal: 0,
+        addOnSelections: [] as AddOnSelection[],
       };
 
   return (
@@ -247,19 +358,20 @@ export default function OrderFlow({
               boxInstances={boxInstances}
               onAddBoxInstance={addBoxInstance}
               onRemoveBoxInstance={removeBoxInstance}
-              onUpdateBoxInstance={updateBoxInstance}
+              onUpdateBoxInstanceCost={updateBoxInstanceCost}
+              onUpdateBoxInstanceQuantity={updateBoxInstanceQuantity}
+              onUpdateBoxInstanceLineItemQuantity={updateBoxInstanceLineItemQuantity}
               discountPercent={discountPercent}
               onDiscountChange={setDiscountPercent}
               clientName={clientName}
               onClientNameChange={setClientName}
               showClientName={showClientName}
               onShowClientNameChange={setShowClientName}
-              diyaEnabled={diyaEnabled}
-              onDiyaEnabledChange={setDiyaEnabled}
-              diyaQuantity={diyaQuantity}
-              onDiyaQuantityChange={setDiyaQuantity}
-              diyaPackCost={diyaPackCost}
-              onDiyaPackCostChange={setDiyaPackCost}
+              addOnStates={addOnStates}
+              onToggleAddOn={toggleAddOn}
+              onAddOnQuantityChange={setAddOnQuantity}
+              onAddOnTotalChange={setAddOnTotal}
+              onAddOnCostPerUnitChange={setAddOnCostPerUnit}
               onNext={() => setStep("preview")}
             />
           ) : (
@@ -328,9 +440,7 @@ export default function OrderFlow({
               clientName={clientName}
               transportCostEnabled={previewProps.transportCostEnabled}
               transportCostAmount={previewProps.transportCostAmount}
-              diyaEnabled={previewProps.diyaEnabled}
-              diyaQuantity={previewProps.diyaQuantity}
-              diyaCostTotal={previewProps.diyaCostTotal}
+              addOnSelections={previewProps.addOnSelections}
             />
           </div>
         </div>
@@ -348,9 +458,7 @@ export default function OrderFlow({
             clientName={clientName}
             transportCostEnabled={previewProps.transportCostEnabled}
             transportCostAmount={previewProps.transportCostAmount}
-            diyaEnabled={previewProps.diyaEnabled}
-            diyaQuantity={previewProps.diyaQuantity}
-            diyaCostTotal={previewProps.diyaCostTotal}
+            addOnSelections={previewProps.addOnSelections}
             forceLight
           />
         </div>

@@ -4,6 +4,15 @@ import { useMemo, useState } from "react";
 import type { CatalogRow } from "@/lib/rows";
 import { formatINR, groupBySegment } from "@/lib/rows";
 
+function groupByCategory(rows: CatalogRow[]): [string, CatalogRow[]][] {
+  const map = new Map<string, CatalogRow[]>();
+  for (const row of rows) {
+    if (!map.has(row.category)) map.set(row.category, []);
+    map.get(row.category)!.push(row);
+  }
+  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+}
+
 type Props = {
   rows: CatalogRow[];
   selectedKeys: Set<string>;
@@ -62,14 +71,29 @@ export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem
                 {segment}
                 <span className="ml-1.5 text-xs font-normal text-[var(--text-faint)]">({segRows.length})</span>
               </summary>
-              <ul className="pl-1">
+              <div className="pl-1">
                 {segRows.length === 0 && (
-                  <li className="px-2 py-1.5 text-xs text-[var(--text-faint)] italic">No products yet</li>
+                  <p className="px-2 py-1.5 text-xs text-[var(--text-faint)] italic">No products yet</p>
                 )}
-                {segRows.map((row) => (
-                  <Row key={row.key} row={row} checked={selectedKeys.has(row.key)} onToggle={onToggle} onDeleteItem={onDeleteItem} />
+                {groupByCategory(segRows).map(([category, catRows]) => (
+                  <details key={category} open className="mb-1">
+                    <summary className="cursor-pointer select-none rounded px-2 py-1 text-xs font-semibold tracking-wide text-[var(--text-muted)] uppercase hover:bg-[var(--input-bg)]">
+                      {category}
+                    </summary>
+                    <ul>
+                      {catRows.map((row) => (
+                        <Row
+                          key={row.key}
+                          row={row}
+                          checked={selectedKeys.has(row.key)}
+                          onToggle={onToggle}
+                          onDeleteItem={onDeleteItem}
+                        />
+                      ))}
+                    </ul>
+                  </details>
                 ))}
-              </ul>
+              </div>
             </details>
           ))
         )}

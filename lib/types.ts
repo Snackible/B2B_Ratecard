@@ -39,29 +39,53 @@ export type Box = {
   name: string;
   cost: number;
   transportCost: number;
+  minItems: number | null;
+  maxItems: number | null;
+};
+
+export type AddOn = {
+  id: string;
+  name: string;
+  costPerUnit: number;
 };
 
 export type HamperConfig = {
   boxTypes: BoxType[];
   boxes: Box[];
+  addOns: AddOn[];
 };
 
 export type NewBoxTypeInput = Omit<BoxType, "id">;
 export type NewBoxInput = Omit<Box, "id">;
+export type NewAddOnInput = Omit<AddOn, "id">;
 
 export type HamperBoxInstance = {
   key: string;
   boxId: string;
   boxTypeName: string;
   boxName: string;
+  /** Number of identical copies of this box. Scales boxCost/transportCost (rate x quantity)
+   *  unless manually overridden; does NOT scale the item contents, which stay per-box. */
+  quantity: number;
   boxCost: number;
+  boxCostManual: boolean;
   transportCost: number;
+  transportCostManual: boolean;
   lineItems: RateCardLineItem[];
+};
+
+export type AddOnSelection = {
+  addOnId: string;
+  name: string;
+  costPerUnit: number;
+  quantity: number;
+  /** quantity x costPerUnit, unless manually overridden by typing a total directly. */
+  total: number;
+  totalManual: boolean;
 };
 
 export type AppSettings = {
   transportCost: number;
-  diyaPackCost: number;
 };
 
 export type RateCardMeta = {
@@ -73,9 +97,7 @@ export type RateCardMeta = {
   transportCostEnabled: boolean;
   transportCostAmount: number;
   boxCostTotal: number;
-  diyaEnabled: boolean;
-  diyaQuantity: number;
-  diyaCostTotal: number;
+  addOnsCostTotal: number;
   itemCount: number;
   totalAmount: number;
   createdAt: string;
@@ -86,6 +108,7 @@ export type RateCardMeta = {
 export type RateCardSnapshot = RateCardMeta & {
   lineItems: RateCardLineItem[];
   boxInstances?: HamperBoxInstance[];
+  addOnSelections?: AddOnSelection[];
 };
 
 export const DISCOUNT_OPTIONS = [10, 12, 15, 18, 20, 22] as const;

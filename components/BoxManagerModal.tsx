@@ -16,6 +16,8 @@ type BoxForm = {
   name: string;
   cost: string;
   transportCost: string;
+  minItems: string;
+  maxItems: string;
 };
 
 export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Props) {
@@ -55,6 +57,7 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
     try {
       await fetch(`/api/hamper/box-types?id=${id}`, { method: "DELETE" });
       const next = {
+        ...config,
         boxTypes: config.boxTypes.filter((bt) => bt.id !== id),
         boxes: config.boxes.filter((b) => b.boxTypeId !== id),
       };
@@ -81,7 +84,7 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
 
   function startNewBox(boxTypeId: string | null) {
     setError(null);
-    setBoxForm({ id: null, boxTypeId, name: "", cost: "", transportCost: "" });
+    setBoxForm({ id: null, boxTypeId, name: "", cost: "", transportCost: "", minItems: "", maxItems: "" });
   }
 
   function startEditBox(box: Box) {
@@ -92,6 +95,8 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
       name: box.name,
       cost: String(box.cost),
       transportCost: String(box.transportCost),
+      minItems: box.minItems === null ? "" : String(box.minItems),
+      maxItems: box.maxItems === null ? "" : String(box.maxItems),
     });
   }
 
@@ -111,6 +116,20 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
       setError("Transportation cost must be a non-negative number.");
       return;
     }
+    const minItems = boxForm.minItems.trim() === "" ? null : Number(boxForm.minItems);
+    const maxItems = boxForm.maxItems.trim() === "" ? null : Number(boxForm.maxItems);
+    if (minItems !== null && (Number.isNaN(minItems) || minItems < 0)) {
+      setError("Min items must be a non-negative number.");
+      return;
+    }
+    if (maxItems !== null && (Number.isNaN(maxItems) || maxItems < 0)) {
+      setError("Max items must be a non-negative number.");
+      return;
+    }
+    if (minItems !== null && maxItems !== null && minItems > maxItems) {
+      setError("Min items can't be greater than max items.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -119,6 +138,8 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
         name: boxForm.name.trim(),
         cost,
         transportCost,
+        minItems,
+        maxItems,
       };
       const res = await fetch(boxForm.id ? `/api/hamper/boxes/${boxForm.id}` : "/api/hamper/boxes", {
         method: boxForm.id ? "PUT" : "POST",
@@ -190,6 +211,13 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
                           <span className="font-medium text-[var(--text-primary)]">{box.name}</span>
                           <span className="ml-2 text-xs text-[var(--text-muted)]">
                             {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
+                            {(box.minItems !== null || box.maxItems !== null) && (
+                              <>
+                                {" "}
+                                &middot; {box.minItems ?? 0}
+                                {box.maxItems !== null ? `-${box.maxItems}` : "+"} items
+                              </>
+                            )}
                           </span>
                         </button>
                         <button
@@ -238,6 +266,13 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
                             <span className="font-medium text-[var(--text-primary)]">{box.name}</span>
                             <span className="ml-2 text-xs text-[var(--text-muted)]">
                               {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
+                            {(box.minItems !== null || box.maxItems !== null) && (
+                              <>
+                                {" "}
+                                &middot; {box.minItems ?? 0}
+                                {box.maxItems !== null ? `-${box.maxItems}` : "+"} items
+                              </>
+                            )}
                             </span>
                           </button>
                           <button
@@ -304,6 +339,28 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
                     onChange={(e) => setBoxForm((f) => (f ? { ...f, transportCost: e.target.value } : f))}
                   />
                 </label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)]">
+                  Min Items
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="No minimum"
+                    className="mt-1 w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
+                    value={boxForm.minItems}
+                    onChange={(e) => setBoxForm((f) => (f ? { ...f, minItems: e.target.value } : f))}
+                  />
+                </label>
+                <label className="block text-xs font-medium text-[var(--text-secondary)]">
+                  Max Items
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="No maximum"
+                    className="mt-1 w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
+                    value={boxForm.maxItems}
+                    onChange={(e) => setBoxForm((f) => (f ? { ...f, maxItems: e.target.value } : f))}
+                  />
+                </label>
                 <label className="block text-xs font-medium text-[var(--text-secondary)] sm:col-span-2">
                   Box Type
                   <select
@@ -322,7 +379,8 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
               </div>
 
               <p className="text-xs text-[var(--text-faint)]">
-                Items are chosen per hamper when this box is added, not fixed here.
+                Items are chosen per hamper when this box is added, not fixed here. Min/Max Items limits the total
+                quantity of items packed into one box.
               </p>
 
               <div className="flex justify-end gap-2 border-t border-[var(--panel-border)] pt-4">

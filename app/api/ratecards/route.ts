@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { listRateCards, saveRateCard } from "@/lib/storage";
-import type { HamperBoxInstance, OrderType, RateCardLineItem } from "@/lib/types";
+import type { AddOnSelection, HamperBoxInstance, OrderType, RateCardLineItem } from "@/lib/types";
 
 export async function GET() {
   const cards = await listRateCards();
@@ -15,11 +15,10 @@ type SaveBody = {
   transportCostEnabled: boolean;
   transportCostAmount: number;
   boxCostTotal: number;
-  diyaEnabled: boolean;
-  diyaQuantity: number;
-  diyaCostTotal: number;
+  addOnsCostTotal: number;
   lineItems: RateCardLineItem[];
   boxInstances?: HamperBoxInstance[];
+  addOnSelections?: AddOnSelection[];
   imageDataUrl: string;
 };
 
@@ -50,11 +49,10 @@ export async function POST(req: Request) {
       transportCostEnabled: Boolean(body.transportCostEnabled),
       transportCostAmount: typeof body.transportCostAmount === "number" ? body.transportCostAmount : 0,
       boxCostTotal: typeof body.boxCostTotal === "number" ? body.boxCostTotal : 0,
-      diyaEnabled: Boolean(body.diyaEnabled),
-      diyaQuantity: typeof body.diyaQuantity === "number" ? body.diyaQuantity : 0,
-      diyaCostTotal: typeof body.diyaCostTotal === "number" ? body.diyaCostTotal : 0,
+      addOnsCostTotal: typeof body.addOnsCostTotal === "number" ? body.addOnsCostTotal : 0,
       lineItems: body.lineItems ?? [],
       boxInstances: body.boxInstances,
+      addOnSelections: body.addOnSelections,
     },
     body.imageDataUrl
   );

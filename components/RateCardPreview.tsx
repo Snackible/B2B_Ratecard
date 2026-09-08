@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import type { SelectedRow } from "@/lib/rows";
 import { applyDiscount, formatINR } from "@/lib/rows";
-import type { HamperBoxInstance } from "@/lib/types";
+import type { AddOnSelection, HamperBoxInstance } from "@/lib/types";
 
 type Props = {
   rows: SelectedRow[];
@@ -16,9 +16,7 @@ type Props = {
   boxInstances?: HamperBoxInstance[];
   transportCostEnabled?: boolean;
   transportCostAmount?: number;
-  diyaEnabled?: boolean;
-  diyaQuantity?: number;
-  diyaCostTotal?: number;
+  addOnSelections?: AddOnSelection[];
 };
 
 const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPreview(
@@ -33,9 +31,7 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
     boxInstances,
     transportCostEnabled,
     transportCostAmount,
-    diyaEnabled,
-    diyaQuantity,
-    diyaCostTotal,
+    addOnSelections,
   },
   ref
 ) {
@@ -54,8 +50,8 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
   const discountAmount = subtotal - applyDiscount(subtotal, discountPercent);
   const boxCostTotal = (boxInstances ?? []).reduce((sum, box) => sum + box.boxCost, 0);
   const transportAmount = transportCostEnabled ? transportCostAmount ?? 0 : 0;
-  const diyaAmount = diyaEnabled ? diyaCostTotal ?? 0 : 0;
-  const payableAmount = subtotal - discountAmount + boxCostTotal + transportAmount + diyaAmount;
+  const addOnsTotal = (addOnSelections ?? []).reduce((sum, s) => sum + s.total, 0);
+  const payableAmount = subtotal - discountAmount + boxCostTotal + transportAmount + addOnsTotal;
   const colCount = onRemove ? 8 : 7;
   const hasBoxes = Boolean(boxInstances && boxInstances.length > 0);
 
@@ -101,6 +97,7 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
                   {box.boxName}
                 </span>
                 <span className="tabular-nums font-normal">
+                  {box.quantity > 1 ? `${box.quantity}× · ` : ""}
                   {formatINR(box.boxCost)} box &middot; {formatINR(box.transportCost)} transport
                 </span>
               </div>
@@ -220,12 +217,14 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
                 <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(transportAmount)}</td>
               </tr>
             )}
-            {diyaEnabled && (
-              <tr className={`${footerBg} font-semibold`}>
-                <td className={`border ${cellBorder} px-3 py-2 text-right`}>Diya add-on ({diyaQuantity} packs)</td>
-                <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(diyaAmount)}</td>
+            {(addOnSelections ?? []).map((s) => (
+              <tr key={s.addOnId} className={`${footerBg} font-semibold`}>
+                <td className={`border ${cellBorder} px-3 py-2 text-right`}>
+                  {s.name} ({s.quantity})
+                </td>
+                <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(s.total)}</td>
               </tr>
-            )}
+            ))}
             <tr className={`${footerBg} font-semibold`}>
               <td className={`border ${cellBorder} px-3 py-2 text-right`}>Payable Amount</td>
               <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(payableAmount)}</td>

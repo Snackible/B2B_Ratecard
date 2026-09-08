@@ -8,6 +8,8 @@ import BoxManagerModal from "./BoxManagerModal";
 
 const UNASSIGNED = "__unassigned__";
 
+type AddOnState = { enabled: boolean; quantity: number; total: number; totalManual: boolean };
+
 type Props = {
   items: Item[];
   hamperConfig: HamperConfig;
@@ -15,19 +17,20 @@ type Props = {
   boxInstances: HamperBoxInstance[];
   onAddBoxInstance: (instance: HamperBoxInstance) => void;
   onRemoveBoxInstance: (key: string) => void;
-  onUpdateBoxInstance: (key: string, patch: Partial<Pick<HamperBoxInstance, "boxCost" | "transportCost">>) => void;
+  onUpdateBoxInstanceCost: (key: string, field: "boxCost" | "transportCost", value: number) => void;
+  onUpdateBoxInstanceQuantity: (key: string, quantity: number) => void;
+  onUpdateBoxInstanceLineItemQuantity: (key: string, itemId: string, quantity: number) => void;
   discountPercent: number;
   onDiscountChange: (percent: number) => void;
   clientName: string;
   onClientNameChange: (name: string) => void;
   showClientName: boolean;
   onShowClientNameChange: (show: boolean) => void;
-  diyaEnabled: boolean;
-  onDiyaEnabledChange: (enabled: boolean) => void;
-  diyaQuantity: number;
-  onDiyaQuantityChange: (qty: number) => void;
-  diyaPackCost: number;
-  onDiyaPackCostChange: (cost: number) => void;
+  addOnStates: Map<string, AddOnState>;
+  onToggleAddOn: (addOnId: string, enabled: boolean) => void;
+  onAddOnQuantityChange: (addOnId: string, quantity: number) => void;
+  onAddOnTotalChange: (addOnId: string, total: number) => void;
+  onAddOnCostPerUnitChange: (addOnId: string, costPerUnit: number) => void;
   onNext: () => void;
 };
 
@@ -38,27 +41,28 @@ export default function HamperBuilder({
   boxInstances,
   onAddBoxInstance,
   onRemoveBoxInstance,
-  onUpdateBoxInstance,
+  onUpdateBoxInstanceCost,
+  onUpdateBoxInstanceQuantity,
+  onUpdateBoxInstanceLineItemQuantity,
   discountPercent,
   onDiscountChange,
   clientName,
   onClientNameChange,
   showClientName,
   onShowClientNameChange,
-  diyaEnabled,
-  onDiyaEnabledChange,
-  diyaQuantity,
-  onDiyaQuantityChange,
-  diyaPackCost,
-  onDiyaPackCostChange,
+  addOnStates,
+  onToggleAddOn,
+  onAddOnQuantityChange,
+  onAddOnTotalChange,
+  onAddOnCostPerUnitChange,
   onNext,
 }: Props) {
   const [showManager, setShowManager] = useState(false);
   const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
-  const [diyaCostInput, setDiyaCostInput] = useState(String(diyaPackCost));
   const [itemSearch, setItemSearch] = useState("");
+  const [expandedInstance, setExpandedInstance] = useState<string | null>(null);
 
   const hasUnassignedBoxes = useMemo(() => hamperConfig.boxes.some((b) => !b.boxTypeId), [hamperConfig.boxes]);
 
@@ -90,6 +94,18 @@ export default function HamperBuilder({
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [items, itemSearch]);
 
+  const totalSelectedQty = useMemo(() => [...quantities.values()].reduce((s, q) => s + q, 0), [quantities]);
+  const limitError = useMemo(() => {
+    if (!selectedBox || quantities.size === 0) return null;
+    if (selectedBox.minItems !== null && totalSelectedQty < selectedBox.minItems) {
+      return `Needs at least ${selectedBox.minItems} item${selectedBox.minItems === 1 ? "" : "s"} (currently ${totalSelectedQty}).`;
+    }
+    if (selectedBox.maxItems !== null && totalSelectedQty > selectedBox.maxItems) {
+      return `Max ${selectedBox.maxItems} item${selectedBox.maxItems === 1 ? "" : "s"} for this box (currently ${totalSelectedQty}).`;
+    }
+    return null;
+  }, [selectedBox, quantities, totalSelectedQty]);
+
   function pickGroup(id: string) {
     setSelectedTypeId(id);
     setSelectedBoxId(null);
@@ -120,7 +136,7 @@ export default function HamperBuilder({
   }
 
   function addBoxToHamper() {
-    if (!selectedBox || quantities.size === 0) return;
+    if (!selectedBox || quantities.size === 0 || limitError) return;
     const boxType = hamperConfig.boxTypes.find((bt) => bt.id === selectedBox.boxTypeId);
     const lineItems = [...quantities.entries()].map(([itemId, quantity]) => {
       const item = itemsById.get(itemId)!;
@@ -140,25 +156,14 @@ export default function HamperBuilder({
       boxId: selectedBox.id,
       boxTypeName: boxType?.name ?? "",
       boxName: selectedBox.name,
+      quantity: 1,
       boxCost: selectedBox.cost,
+      boxCostManual: false,
       transportCost: selectedBox.transportCost,
+      transportCostManual: false,
       lineItems,
     });
     setQuantities(new Map());
-  }
-
-  function commitDiyaCost() {
-    const num = Number(diyaCostInput);
-    if (!Number.isNaN(num) && num >= 0) {
-      onDiyaPackCostChange(num);
-      fetch("/api/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ diyaPackCost: num }),
-      }).catch(() => {});
-    } else {
-      setDiyaCostInput(String(diyaPackCost));
-    }
   }
 
   const groupTabs = [
@@ -222,6 +227,13 @@ export default function HamperBuilder({
                     <div className="font-medium text-[var(--text-primary)]">{box.name}</div>
                     <div className="tabular-nums text-xs text-[var(--text-muted)]">
                       {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
+                      {(box.minItems !== null || box.maxItems !== null) && (
+                        <>
+                          {" "}
+                          &middot; {box.minItems ?? 0}
+                          {box.maxItems !== null ? `-${box.maxItems}` : "+"} items
+                        </>
+                      )}
                     </div>
                   </button>
                 ))}
@@ -232,7 +244,12 @@ export default function HamperBuilder({
               <div className="border-t border-[var(--panel-border)] pt-3">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="text-xs font-medium text-[var(--text-muted)]">
-                    Choose items for &ldquo;{selectedBox.name}&rdquo; ({quantities.size} selected)
+                    Choose items for &ldquo;{selectedBox.name}&rdquo; ({totalSelectedQty} item
+                    {totalSelectedQty === 1 ? "" : "s"}
+                    {selectedBox.minItems !== null || selectedBox.maxItems !== null
+                      ? ` / ${selectedBox.minItems ?? 0}${selectedBox.maxItems !== null ? `-${selectedBox.maxItems}` : "+"}`
+                      : ""}
+                    )
                   </div>
                   <input
                     type="text"
@@ -286,9 +303,10 @@ export default function HamperBuilder({
                     ))}
                   </div>
                 )}
+                {limitError && <p className="mt-2 text-xs text-red-500">{limitError}</p>}
                 <button
                   onClick={addBoxToHamper}
-                  disabled={quantities.size === 0}
+                  disabled={quantities.size === 0 || Boolean(limitError)}
                   className="mt-3 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
                 >
                   Add box to hamper
@@ -306,48 +324,152 @@ export default function HamperBuilder({
           </div>
           <ul className="divide-y divide-[var(--panel-border)]">
             {boxInstances.map((b) => (
-              <li key={b.key} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <div className="min-w-0">
-                  <span className="text-sm font-medium text-[var(--text-primary)]">{b.boxName}</span>
-                  <span className="ml-2 text-xs text-[var(--text-muted)]">
-                    {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                    Box
-                    <span className="text-[var(--text-faint)]">₹</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={b.boxCost}
-                      onChange={(e) => onUpdateBoxInstance(b.key, { boxCost: Math.max(0, Number(e.target.value) || 0) })}
-                      className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                    />
-                  </label>
-                  <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                    Transport
-                    <span className="text-[var(--text-faint)]">₹</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={b.transportCost}
-                      onChange={(e) =>
-                        onUpdateBoxInstance(b.key, { transportCost: Math.max(0, Number(e.target.value) || 0) })
-                      }
-                      className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                    />
-                  </label>
+              <li key={b.key} className="py-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <button
-                    onClick={() => onRemoveBoxInstance(b.key)}
-                    className="text-xs text-[var(--text-faint)] hover:text-red-500"
-                    aria-label={`Remove ${b.boxName}`}
+                    onClick={() => setExpandedInstance((cur) => (cur === b.key ? null : b.key))}
+                    className="min-w-0 flex-1 text-left"
                   >
-                    ✕
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{b.boxName}</span>
+                    <span className="ml-2 text-xs text-[var(--text-muted)]">
+                      {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"} &middot;{" "}
+                      {expandedInstance === b.key ? "hide" : "edit"} items
+                    </span>
                   </button>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                      Qty
+                      <input
+                        type="number"
+                        min={1}
+                        value={b.quantity}
+                        onChange={(e) =>
+                          onUpdateBoxInstanceQuantity(b.key, Math.max(1, Number(e.target.value) || 1))
+                        }
+                        className="w-12 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                      Box
+                      <span className="text-[var(--text-faint)]">₹</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={b.boxCost}
+                        onChange={(e) =>
+                          onUpdateBoxInstanceCost(b.key, "boxCost", Math.max(0, Number(e.target.value) || 0))
+                        }
+                        className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                      Transport
+                      <span className="text-[var(--text-faint)]">₹</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={b.transportCost}
+                        onChange={(e) =>
+                          onUpdateBoxInstanceCost(b.key, "transportCost", Math.max(0, Number(e.target.value) || 0))
+                        }
+                        className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                      />
+                    </label>
+                    <button
+                      onClick={() => onRemoveBoxInstance(b.key)}
+                      className="text-xs text-[var(--text-faint)] hover:text-red-500"
+                      aria-label={`Remove ${b.boxName}`}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
+                {expandedInstance === b.key && (
+                  <ul className="mt-2 ml-2 space-y-1 border-l border-[var(--panel-border)] pl-3">
+                    {b.lineItems.map((li) => (
+                      <li key={li.itemId} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                        <span className="min-w-0 flex-1 truncate">{li.name}</span>
+                        <span className="tabular-nums text-[var(--text-faint)]">{formatINR(li.mrp)}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={li.quantity}
+                          onChange={(e) =>
+                            onUpdateBoxInstanceLineItemQuantity(
+                              b.key,
+                              li.itemId,
+                              Math.max(1, Number(e.target.value) || 1)
+                            )
+                          }
+                          className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
+          </ul>
+        </div>
+      )}
+
+      {hamperConfig.addOns.length > 0 && (
+        <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
+          <div className="mb-2 text-sm font-semibold tracking-tight text-[var(--text-primary)]">Add-ons</div>
+          <ul className="divide-y divide-[var(--panel-border)]">
+            {hamperConfig.addOns.map((addOn) => {
+              const state = addOnStates.get(addOn.id);
+              const enabled = state?.enabled ?? false;
+              const quantity = state?.quantity ?? 1;
+              const total = state?.total ?? addOn.costPerUnit;
+              return (
+                <li key={addOn.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      onChange={(e) => onToggleAddOn(addOn.id, e.target.checked)}
+                      className="h-4 w-4 accent-[var(--accent)]"
+                    />
+                    {addOn.name}
+                  </label>
+                  {enabled && (
+                    <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                      <label className="flex items-center gap-1">
+                        Qty
+                        <input
+                          type="number"
+                          min={1}
+                          value={quantity}
+                          onChange={(e) => onAddOnQuantityChange(addOn.id, Math.max(1, Number(e.target.value) || 1))}
+                          className="w-14 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                        />
+                      </label>
+                      <label className="flex items-center gap-1">
+                        Rate ₹
+                        <input
+                          type="number"
+                          min={0}
+                          value={addOn.costPerUnit}
+                          onChange={(e) => onAddOnCostPerUnitChange(addOn.id, Math.max(0, Number(e.target.value) || 0))}
+                          className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                        />
+                      </label>
+                      <label className="flex items-center gap-1">
+                        Total ₹
+                        <input
+                          type="number"
+                          min={0}
+                          value={total}
+                          onChange={(e) => onAddOnTotalChange(addOn.id, Math.max(0, Number(e.target.value) || 0))}
+                          className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs font-medium text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -374,42 +496,6 @@ export default function HamperBuilder({
             />
             Show on card
           </label>
-        </div>
-
-        <div className="h-8 w-px bg-[var(--panel-border)]" aria-hidden />
-
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
-            <input
-              type="checkbox"
-              checked={diyaEnabled}
-              onChange={(e) => onDiyaEnabledChange(e.target.checked)}
-              className="h-4 w-4 accent-[var(--accent)]"
-            />
-            Diya add-on
-          </label>
-          {diyaEnabled && (
-            <>
-              <input
-                type="number"
-                min={1}
-                value={diyaQuantity}
-                onChange={(e) => onDiyaQuantityChange(Math.max(1, Number(e.target.value) || 1))}
-                title="Packs"
-                className="w-14 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-              />
-              <span className="text-xs text-[var(--text-faint)]">packs &times; ₹</span>
-              <input
-                type="number"
-                min={0}
-                value={diyaCostInput}
-                onChange={(e) => setDiyaCostInput(e.target.value)}
-                onBlur={commitDiyaCost}
-                title="Cost per pack"
-                className="w-16 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-              />
-            </>
-          )}
         </div>
 
         <div className="ml-auto">

@@ -2,11 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type {
+  AddOn,
   AppSettings,
   Box,
   BoxType,
   HamperConfig,
   Item,
+  NewAddOnInput,
   NewBoxInput,
   NewBoxTypeInput,
   RateCardMeta,
@@ -38,8 +40,8 @@ const LOCAL_INDEX = path.join(LOCAL_RATECARDS_DIR, "index.json");
 const LOCAL_HAMPER_CONFIG = path.join(LOCAL_DIR, "hamper-config.json");
 const LOCAL_SETTINGS = path.join(LOCAL_DIR, "settings.json");
 
-const EMPTY_HAMPER_CONFIG: HamperConfig = { boxTypes: [], boxes: [] };
-const DEFAULT_SETTINGS: AppSettings = { transportCost: 0, diyaPackCost: 50 };
+const EMPTY_HAMPER_CONFIG: HamperConfig = { boxTypes: [], boxes: [], addOns: [] };
+const DEFAULT_SETTINGS: AppSettings = { transportCost: 0 };
 
 async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
   try {
@@ -127,15 +129,30 @@ export async function removeItem(id: string): Promise<void> {
 
 // ---------- Hamper config (box types + boxes) ----------
 
+// Backfills fields introduced after some configs were already saved (e.g. addOns,
+// per-box minItems/maxItems), so older stored configs don't come back with
+// missing arrays/fields.
+function withHamperConfigDefaults(config: Partial<HamperConfig>): HamperConfig {
+  return {
+    boxTypes: config.boxTypes ?? [],
+    boxes: (config.boxes ?? []).map((b) => ({
+      ...b,
+      minItems: b.minItems ?? null,
+      maxItems: b.maxItems ?? null,
+    })),
+    addOns: config.addOns ?? [],
+  };
+}
+
 export async function getHamperConfig(): Promise<HamperConfig> {
   if (USE_BLOB) {
     const { list } = await import("@vercel/blob");
     const { blobs } = await list({ prefix: "hamper-config.json", limit: 1, ...blobAuth });
     if (blobs.length === 0) return EMPTY_HAMPER_CONFIG;
     const res = await fetch(blobs[0].url, { cache: "no-store" });
-    return (await res.json()) as HamperConfig;
+    return withHamperConfigDefaults((await res.json()) as Partial<HamperConfig>);
   }
-  return readJsonFile<HamperConfig>(LOCAL_HAMPER_CONFIG, EMPTY_HAMPER_CONFIG);
+  return withHamperConfigDefaults(await readJsonFile<Partial<HamperConfig>>(LOCAL_HAMPER_CONFIG, EMPTY_HAMPER_CONFIG));
 }
 
 export async function saveHamperConfig(config: HamperConfig): Promise<void> {
@@ -202,6 +219,35 @@ export async function removeBoxType(id: string): Promise<void> {
   await saveHamperConfig(config);
 }
 
+// Merges the provided sections into the current config in a single read-modify-write.
+// Any array included in `patch` replaces that section wholesale (boxTypes/boxes/addOns
+// are each all-or-nothing) — used for both one-off bulk edits and single-field tweaks
+// (e.g. an add-on's cost) sent as a full replacement array.
+export async function updateHamperConfig(patch: Partial<HamperConfig>): Promise<HamperConfig> {
+  const config = await getHamperConfig();
+  const next: HamperConfig = {
+    boxTypes: patch.boxTypes ?? config.boxTypes,
+    boxes: patch.boxes ?? config.boxes,
+    addOns: patch.addOns ?? config.addOns,
+  };
+  await saveHamperConfig(next);
+  return next;
+}
+
+export async function addAddOn(input: NewAddOnInput): Promise<AddOn> {
+  const config = await getHamperConfig();
+  const addOn: AddOn = { ...input, id: randomUUID() };
+  config.addOns.push(addOn);
+  await saveHamperConfig(config);
+  return addOn;
+}
+
+export async function removeAddOn(id: string): Promise<void> {
+  const config = await getHamperConfig();
+  config.addOns = config.addOns.filter((a) => a.id !== id);
+  await saveHamperConfig(config);
+}
+
 // ---------- Settings ----------
 
 export async function getSettings(): Promise<AppSettings> {
@@ -244,9 +290,7 @@ function withMetaDefaults(meta: Partial<RateCardMeta> & Pick<RateCardMeta, "id" 
     transportCostEnabled: false,
     transportCostAmount: 0,
     boxCostTotal: 0,
-    diyaEnabled: false,
-    diyaQuantity: 0,
-    diyaCostTotal: 0,
+    addOnsCostTotal: 0,
     itemCount: 0,
     totalAmount: 0,
     ...meta,
@@ -273,7 +317,7 @@ function computeTotals(snapshot: {
   transportCostEnabled: boolean;
   transportCostAmount: number;
   boxCostTotal: number;
-  diyaCostTotal: number;
+  addOnsCostTotal: number;
 }) {
   const allLineItems = [
     ...snapshot.lineItems,
@@ -283,7 +327,7 @@ function computeTotals(snapshot: {
   const subtotal = allLineItems.reduce((sum, li) => sum + li.mrp * li.quantity, 0);
   const discounted = applyDiscount(subtotal, snapshot.discountPercent);
   const transport = snapshot.transportCostEnabled ? snapshot.transportCostAmount : 0;
-  const totalAmount = discounted + snapshot.boxCostTotal + transport + snapshot.diyaCostTotal;
+  const totalAmount = discounted + snapshot.boxCostTotal + transport + snapshot.addOnsCostTotal;
   return { itemCount, totalAmount };
 }
 
@@ -330,9 +374,7 @@ export async function saveRateCard(
       transportCostEnabled: snapshot.transportCostEnabled,
       transportCostAmount: snapshot.transportCostAmount,
       boxCostTotal: snapshot.boxCostTotal,
-      diyaEnabled: snapshot.diyaEnabled,
-      diyaQuantity: snapshot.diyaQuantity,
-      diyaCostTotal: snapshot.diyaCostTotal,
+      addOnsCostTotal: snapshot.addOnsCostTotal,
       itemCount,
       totalAmount,
       createdAt,
@@ -367,9 +409,7 @@ export async function saveRateCard(
     transportCostEnabled: snapshot.transportCostEnabled,
     transportCostAmount: snapshot.transportCostAmount,
     boxCostTotal: snapshot.boxCostTotal,
-    diyaEnabled: snapshot.diyaEnabled,
-    diyaQuantity: snapshot.diyaQuantity,
-    diyaCostTotal: snapshot.diyaCostTotal,
+    addOnsCostTotal: snapshot.addOnsCostTotal,
     itemCount,
     totalAmount,
     createdAt,
@@ -402,9 +442,7 @@ export async function updateRateCard(
     transportCostEnabled: snapshot.transportCostEnabled,
     transportCostAmount: snapshot.transportCostAmount,
     boxCostTotal: snapshot.boxCostTotal,
-    diyaEnabled: snapshot.diyaEnabled,
-    diyaQuantity: snapshot.diyaQuantity,
-    diyaCostTotal: snapshot.diyaCostTotal,
+    addOnsCostTotal: snapshot.addOnsCostTotal,
     itemCount,
     totalAmount,
     createdAt: existing.createdAt,
@@ -502,7 +540,12 @@ export async function getRateCard(id: string): Promise<RateCardSnapshot | null> 
     snapshot = await readJsonFile<RateCardSnapshot | null>(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), null);
   }
   if (!snapshot) return null;
-  return { ...withMetaDefaults(snapshot), lineItems: snapshot.lineItems ?? [], boxInstances: snapshot.boxInstances };
+  return {
+    ...withMetaDefaults(snapshot),
+    lineItems: snapshot.lineItems ?? [],
+    boxInstances: snapshot.boxInstances,
+    addOnSelections: snapshot.addOnSelections,
+  };
 }
 
 export async function getLocalRateCardImagePath(id: string): Promise<string> {
