@@ -8,8 +8,6 @@ import BoxManagerModal from "./BoxManagerModal";
 
 const UNASSIGNED = "__unassigned__";
 
-type AddOnState = { enabled: boolean; quantity: number; total: number; totalManual: boolean };
-
 type Props = {
   items: Item[];
   hamperConfig: HamperConfig;
@@ -26,10 +24,9 @@ type Props = {
   onClientNameChange: (name: string) => void;
   showClientName: boolean;
   onShowClientNameChange: (show: boolean) => void;
-  addOnStates: Map<string, AddOnState>;
-  onToggleAddOn: (addOnId: string, enabled: boolean) => void;
-  onAddOnQuantityChange: (addOnId: string, quantity: number) => void;
-  onAddOnTotalChange: (addOnId: string, total: number) => void;
+  onToggleBoxAddOn: (boxKey: string, addOnId: string, enabled: boolean) => void;
+  onBoxAddOnQuantityChange: (boxKey: string, addOnId: string, quantity: number) => void;
+  onBoxAddOnTotalChange: (boxKey: string, addOnId: string, total: number) => void;
   onAddOnCostPerUnitChange: (addOnId: string, costPerUnit: number) => void;
   onNext: () => void;
 };
@@ -50,10 +47,9 @@ export default function HamperBuilder({
   onClientNameChange,
   showClientName,
   onShowClientNameChange,
-  addOnStates,
-  onToggleAddOn,
-  onAddOnQuantityChange,
-  onAddOnTotalChange,
+  onToggleBoxAddOn,
+  onBoxAddOnQuantityChange,
+  onBoxAddOnTotalChange,
   onAddOnCostPerUnitChange,
   onNext,
 }: Props) {
@@ -162,6 +158,7 @@ export default function HamperBuilder({
       transportCost: selectedBox.transportCost,
       transportCostManual: false,
       lineItems,
+      addOnSelections: [],
     });
     setQuantities(new Map());
   }
@@ -407,69 +404,64 @@ export default function HamperBuilder({
                     ))}
                   </ul>
                 )}
+                {hamperConfig.addOns.length > 0 && (
+                  <div className="mt-2 ml-2 space-y-1 border-l border-[var(--panel-border)] pl-3">
+                    <div className="text-[10px] font-semibold tracking-wide text-[var(--text-faint)] uppercase">
+                      Add-ons for this box
+                    </div>
+                    {hamperConfig.addOns.map((addOn) => {
+                      const sel = b.addOnSelections.find((a) => a.addOnId === addOn.id);
+                      const enabled = Boolean(sel);
+                      return (
+                        <div key={addOn.id} className="flex flex-wrap items-center gap-2 py-0.5 text-xs">
+                          <label className="flex flex-1 items-center gap-1.5 text-[var(--text-secondary)]">
+                            <input
+                              type="checkbox"
+                              checked={enabled}
+                              onChange={(e) => onToggleBoxAddOn(b.key, addOn.id, e.target.checked)}
+                              className="h-3.5 w-3.5 accent-[var(--accent)]"
+                            />
+                            {addOn.name}
+                          </label>
+                          {sel && (
+                            <div className="flex items-center gap-2 text-[var(--text-muted)]">
+                              <label className="flex items-center gap-1">
+                                Qty
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={sel.quantity}
+                                  onChange={(e) =>
+                                    onBoxAddOnQuantityChange(
+                                      b.key,
+                                      addOn.id,
+                                      Math.max(1, Number(e.target.value) || 1)
+                                    )
+                                  }
+                                  className="w-12 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
+                                />
+                              </label>
+                              <label className="flex items-center gap-1">
+                                Total ₹
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={sel.total}
+                                  onChange={(e) =>
+                                    onBoxAddOnTotalChange(b.key, addOn.id, Math.max(0, Number(e.target.value) || 0))
+                                  }
+                                  className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs font-medium text-[var(--text-primary)]"
+                                />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </li>
             ))}
-          </ul>
-        </div>
-      )}
-
-      {hamperConfig.addOns.length > 0 && (
-        <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
-          <div className="mb-2 text-sm font-semibold tracking-tight text-[var(--text-primary)]">Add-ons</div>
-          <ul className="divide-y divide-[var(--panel-border)]">
-            {hamperConfig.addOns.map((addOn) => {
-              const state = addOnStates.get(addOn.id);
-              const enabled = state?.enabled ?? false;
-              const quantity = state?.quantity ?? 1;
-              const total = state?.total ?? addOn.costPerUnit;
-              return (
-                <li key={addOn.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <label className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      onChange={(e) => onToggleAddOn(addOn.id, e.target.checked)}
-                      className="h-4 w-4 accent-[var(--accent)]"
-                    />
-                    {addOn.name}
-                  </label>
-                  {enabled && (
-                    <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                      <label className="flex items-center gap-1">
-                        Qty
-                        <input
-                          type="number"
-                          min={1}
-                          value={quantity}
-                          onChange={(e) => onAddOnQuantityChange(addOn.id, Math.max(1, Number(e.target.value) || 1))}
-                          className="w-14 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                        />
-                      </label>
-                      <label className="flex items-center gap-1">
-                        Rate ₹
-                        <input
-                          type="number"
-                          min={0}
-                          value={addOn.costPerUnit}
-                          onChange={(e) => onAddOnCostPerUnitChange(addOn.id, Math.max(0, Number(e.target.value) || 0))}
-                          className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                        />
-                      </label>
-                      <label className="flex items-center gap-1">
-                        Total ₹
-                        <input
-                          type="number"
-                          min={0}
-                          value={total}
-                          onChange={(e) => onAddOnTotalChange(addOn.id, Math.max(0, Number(e.target.value) || 0))}
-                          className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs font-medium text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                        />
-                      </label>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
           </ul>
         </div>
       )}
@@ -514,6 +506,7 @@ export default function HamperBuilder({
           hamperConfig={hamperConfig}
           onClose={() => setShowManager(false)}
           onChange={onHamperConfigChange}
+          onAddOnCostPerUnitChange={onAddOnCostPerUnitChange}
         />
       )}
     </div>

@@ -543,8 +543,13 @@ export async function getRateCard(id: string): Promise<RateCardSnapshot | null> 
   return {
     ...withMetaDefaults(snapshot),
     lineItems: snapshot.lineItems ?? [],
-    boxInstances: snapshot.boxInstances,
-    addOnSelections: snapshot.addOnSelections,
+    boxInstances: snapshot.boxInstances?.map((b) => ({
+      ...b,
+      quantity: b.quantity ?? 1,
+      boxCostManual: b.boxCostManual ?? false,
+      transportCostManual: b.transportCostManual ?? false,
+      addOnSelections: b.addOnSelections ?? [],
+    })),
   };
 }
 

@@ -1,4 +1,4 @@
-import type { AddOnSelection, HamperBoxInstance, OrderType } from "./types";
+import type { HamperBoxInstance, OrderType } from "./types";
 import type { SelectedRow } from "./rows";
 import { applyDiscount } from "./rows";
 
@@ -18,7 +18,6 @@ export function buildRateCardCsv({
   discountPercent,
   transportCostEnabled,
   transportCostAmount,
-  addOnSelections,
 }: {
   orderType: OrderType;
   rows: SelectedRow[];
@@ -26,7 +25,6 @@ export function buildRateCardCsv({
   discountPercent: number;
   transportCostEnabled: boolean;
   transportCostAmount: number;
-  addOnSelections: AddOnSelection[];
 }): string {
   const out: (string | number)[][] = [];
 
@@ -38,6 +36,9 @@ export function buildRateCardCsv({
       }
       out.push([box.boxName, box.quantity, "(box cost)", "", "", "", box.boxCost]);
       out.push([box.boxName, box.quantity, "(transport cost)", "", "", "", box.transportCost]);
+      for (const addOn of box.addOnSelections) {
+        out.push([box.boxName, box.quantity, `(${addOn.name})`, "", "", addOn.quantity, addOn.total]);
+      }
     }
   } else {
     out.push(["Category", "Product Name", "Grammage (g)", "MRP (INR)", "Shelf Life", "Qty", "Total"]);
@@ -52,7 +53,10 @@ export function buildRateCardCsv({
   const boxCostTotal = orderType === "hamper" && boxInstances ? boxInstances.reduce((s, b) => s + b.boxCost, 0) : 0;
   const discountAmount = itemsSubtotal - applyDiscount(itemsSubtotal, discountPercent);
   const transportAmount = transportCostEnabled ? transportCostAmount : 0;
-  const addOnsTotal = addOnSelections.reduce((s, a) => s + a.total, 0);
+  const addOnsTotal =
+    orderType === "hamper" && boxInstances
+      ? boxInstances.reduce((sum, box) => sum + box.addOnSelections.reduce((s, a) => s + a.total, 0), 0)
+      : 0;
   const payable = itemsSubtotal - discountAmount + boxCostTotal + transportAmount + addOnsTotal;
 
   out.push([]);
@@ -60,12 +64,10 @@ export function buildRateCardCsv({
   out.push([`Discount${discountPercent > 0 ? ` (${discountPercent}%)` : ""}`, "", "", "", "", "", discountAmount]);
   if (orderType === "hamper") {
     out.push(["Box cost", "", "", "", "", "", boxCostTotal]);
+    out.push(["Add-ons", "", "", "", "", "", addOnsTotal]);
   }
   if (transportCostEnabled) {
     out.push(["Transport cost", "", "", "", "", "", transportAmount]);
-  }
-  for (const addOn of addOnSelections) {
-    out.push([`${addOn.name} (${addOn.quantity})`, "", "", "", "", "", addOn.total]);
   }
   out.push(["Payable Amount", "", "", "", "", "", payable]);
 

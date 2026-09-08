@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { listRateCards, saveRateCard } from "@/lib/storage";
-import type { AddOnSelection, HamperBoxInstance, OrderType, RateCardLineItem } from "@/lib/types";
+import type { HamperBoxInstance, OrderType, RateCardLineItem } from "@/lib/types";
 
 export async function GET() {
   const cards = await listRateCards();
@@ -18,7 +18,6 @@ type SaveBody = {
   addOnsCostTotal: number;
   lineItems: RateCardLineItem[];
   boxInstances?: HamperBoxInstance[];
-  addOnSelections?: AddOnSelection[];
   imageDataUrl: string;
 };
 
@@ -52,7 +51,6 @@ export async function POST(req: Request) {
       addOnsCostTotal: typeof body.addOnsCostTotal === "number" ? body.addOnsCostTotal : 0,
       lineItems: body.lineItems ?? [],
       boxInstances: body.boxInstances,
-      addOnSelections: body.addOnSelections,
     },
     body.imageDataUrl
   );

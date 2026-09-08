@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { Box, HamperConfig } from "@/lib/types";
+import type { AddOn, Box, HamperConfig } from "@/lib/types";
 import { formatINR } from "@/lib/rows";
 
 type Props = {
   hamperConfig: HamperConfig;
   onClose: () => void;
   onChange: (config: HamperConfig) => void;
+  onAddOnCostPerUnitChange: (addOnId: string, costPerUnit: number) => void;
 };
 
 type BoxForm = {
@@ -20,12 +21,58 @@ type BoxForm = {
   maxItems: string;
 };
 
-export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Props) {
+export default function BoxManagerModal({ hamperConfig, onClose, onChange, onAddOnCostPerUnitChange }: Props) {
   const [config, setConfig] = useState(hamperConfig);
   const [newTypeName, setNewTypeName] = useState("");
   const [boxForm, setBoxForm] = useState<BoxForm | null>(null);
+  const [newAddOnName, setNewAddOnName] = useState("");
+  const [newAddOnCost, setNewAddOnCost] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function addAddOnEntry() {
+    const costPerUnit = Number(newAddOnCost);
+    if (!newAddOnName.trim() || !newAddOnCost || Number.isNaN(costPerUnit) || costPerUnit < 0) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/hamper/addons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newAddOnName.trim(), costPerUnit }),
+      });
+      if (!res.ok) throw new Error();
+      const addOn: AddOn = await res.json();
+      const next = { ...config, addOns: [...config.addOns, addOn] };
+      setConfig(next);
+      onChange(next);
+      setNewAddOnName("");
+      setNewAddOnCost("");
+    } catch {
+      setError("Could not add add-on.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteAddOnEntry(id: string) {
+    const ok = window.confirm("Delete this add-on? This can't be undone.");
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/hamper/addons?id=${id}`, { method: "DELETE" });
+      const next = { ...config, addOns: config.addOns.filter((a) => a.id !== id) };
+      setConfig(next);
+      onChange(next);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function updateAddOnCost(id: string, costPerUnit: number) {
+    setConfig((prev) => ({ ...prev, addOns: prev.addOns.map((a) => (a.id === id ? { ...a, costPerUnit } : a)) }));
+    onAddOnCostPerUnitChange(id, costPerUnit);
+  }
 
   async function addBoxType() {
     if (!newTypeName.trim()) return;
@@ -306,6 +353,62 @@ export default function BoxManagerModal({ hamperConfig, onClose, onChange }: Pro
                 >
                   Add Type
                 </button>
+              </div>
+
+              <div className="rounded-lg border border-[var(--panel-border)] p-3">
+                <div className="mb-2 text-sm font-semibold tracking-tight text-[var(--text-primary)]">Add-ons</div>
+                <ul className="space-y-1">
+                  {config.addOns.map((addOn) => (
+                    <li key={addOn.id} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--input-bg)]">
+                      <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-primary)]">{addOn.name}</span>
+                      <label className="flex shrink-0 items-center gap-1 text-xs text-[var(--text-muted)]">
+                        ₹
+                        <input
+                          type="number"
+                          min={0}
+                          value={addOn.costPerUnit}
+                          onChange={(e) => updateAddOnCost(addOn.id, Math.max(0, Number(e.target.value) || 0))}
+                          className="w-16 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1.5 py-0.5 text-right text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                        />
+                        /unit
+                      </label>
+                      <button
+                        onClick={() => deleteAddOnEntry(addOn.id)}
+                        className="shrink-0 px-1.5 text-xs text-[var(--text-faint)] hover:text-red-500"
+                        aria-label={`Delete ${addOn.name}`}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                  {config.addOns.length === 0 && (
+                    <li className="px-2 py-1 text-xs text-[var(--text-faint)] italic">No add-ons yet</li>
+                  )}
+                </ul>
+                <div className="mt-3 flex gap-2 border-t border-[var(--panel-border)] pt-3">
+                  <input
+                    type="text"
+                    placeholder="Add-on name (e.g. Diya)"
+                    value={newAddOnName}
+                    onChange={(e) => setNewAddOnName(e.target.value)}
+                    className="flex-1 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="₹/unit"
+                    value={newAddOnCost}
+                    onChange={(e) => setNewAddOnCost(e.target.value)}
+                    className="w-24 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                  />
+                  <button
+                    onClick={addAddOnEntry}
+                    disabled={busy || !newAddOnName.trim() || !newAddOnCost}
+                    className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                  >
+                    Add Add-on
+                  </button>
+                </div>
               </div>
             </div>
           ) : (

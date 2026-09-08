@@ -59,6 +59,16 @@ export type NewBoxTypeInput = Omit<BoxType, "id">;
 export type NewBoxInput = Omit<Box, "id">;
 export type NewAddOnInput = Omit<AddOn, "id">;
 
+export type AddOnSelection = {
+  addOnId: string;
+  name: string;
+  costPerUnit: number;
+  quantity: number;
+  /** quantity x costPerUnit, unless manually overridden by typing a total directly. */
+  total: number;
+  totalManual: boolean;
+};
+
 export type HamperBoxInstance = {
   key: string;
   boxId: string;
@@ -72,16 +82,8 @@ export type HamperBoxInstance = {
   transportCost: number;
   transportCostManual: boolean;
   lineItems: RateCardLineItem[];
-};
-
-export type AddOnSelection = {
-  addOnId: string;
-  name: string;
-  costPerUnit: number;
-  quantity: number;
-  /** quantity x costPerUnit, unless manually overridden by typing a total directly. */
-  total: number;
-  totalManual: boolean;
+  /** Add-ons (Diya, Personalised Card, etc.) are chosen per box, not once for the whole hamper. */
+  addOnSelections: AddOnSelection[];
 };
 
 export type AppSettings = {
@@ -108,7 +110,6 @@ export type RateCardMeta = {
 export type RateCardSnapshot = RateCardMeta & {
   lineItems: RateCardLineItem[];
   boxInstances?: HamperBoxInstance[];
-  addOnSelections?: AddOnSelection[];
 };
 
 export const DISCOUNT_OPTIONS = [10, 12, 15, 18, 20, 22] as const;

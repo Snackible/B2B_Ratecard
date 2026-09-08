@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import type { SelectedRow } from "@/lib/rows";
 import { applyDiscount, formatINR } from "@/lib/rows";
-import type { AddOnSelection, HamperBoxInstance } from "@/lib/types";
+import type { HamperBoxInstance } from "@/lib/types";
 
 type Props = {
   rows: SelectedRow[];
@@ -12,11 +12,11 @@ type Props = {
   onQuantityChange?: (key: string, quantity: number) => void;
   /** true for the hidden copy used to render the exported JPEG — always light/branded, regardless of app theme. */
   forceLight?: boolean;
-  /** Hamper orders group priced rows under each box instance instead of one flat table. */
+  /** Hamper orders group priced rows under each box instance instead of one flat table. Each
+   *  box carries its own add-on selections (Diya, Personalised Card, etc.). */
   boxInstances?: HamperBoxInstance[];
   transportCostEnabled?: boolean;
   transportCostAmount?: number;
-  addOnSelections?: AddOnSelection[];
 };
 
 const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPreview(
@@ -31,7 +31,6 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
     boxInstances,
     transportCostEnabled,
     transportCostAmount,
-    addOnSelections,
   },
   ref
 ) {
@@ -50,7 +49,16 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
   const discountAmount = subtotal - applyDiscount(subtotal, discountPercent);
   const boxCostTotal = (boxInstances ?? []).reduce((sum, box) => sum + box.boxCost, 0);
   const transportAmount = transportCostEnabled ? transportCostAmount ?? 0 : 0;
-  const addOnsTotal = (addOnSelections ?? []).reduce((sum, s) => sum + s.total, 0);
+
+  // Add-ons are chosen per box; consolidate by name for one clean total line each.
+  const addOnTotalsByName = new Map<string, { quantity: number; total: number }>();
+  for (const box of boxInstances ?? []) {
+    for (const sel of box.addOnSelections) {
+      const existing = addOnTotalsByName.get(sel.name) ?? { quantity: 0, total: 0 };
+      addOnTotalsByName.set(sel.name, { quantity: existing.quantity + sel.quantity, total: existing.total + sel.total });
+    }
+  }
+  const addOnsTotal = [...addOnTotalsByName.values()].reduce((sum, a) => sum + a.total, 0);
   const payableAmount = subtotal - discountAmount + boxCostTotal + transportAmount + addOnsTotal;
   const colCount = onRemove ? 8 : 7;
   const hasBoxes = Boolean(boxInstances && boxInstances.length > 0);
@@ -99,6 +107,8 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
                 <span className="tabular-nums font-normal">
                   {box.quantity > 1 ? `${box.quantity}× · ` : ""}
                   {formatINR(box.boxCost)} box &middot; {formatINR(box.transportCost)} transport
+                  {box.addOnSelections.length > 0 &&
+                    ` · ${box.addOnSelections.map((a) => `${a.name} ×${a.quantity}`).join(", ")}`}
                 </span>
               </div>
               <table className="w-full border-collapse text-sm">
@@ -217,12 +227,12 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
                 <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(transportAmount)}</td>
               </tr>
             )}
-            {(addOnSelections ?? []).map((s) => (
-              <tr key={s.addOnId} className={`${footerBg} font-semibold`}>
+            {[...addOnTotalsByName.entries()].map(([name, a]) => (
+              <tr key={name} className={`${footerBg} font-semibold`}>
                 <td className={`border ${cellBorder} px-3 py-2 text-right`}>
-                  {s.name} ({s.quantity})
+                  {name} ({a.quantity})
                 </td>
-                <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(s.total)}</td>
+                <td className={`border ${cellBorder} w-32 px-3 py-2 text-right`}>{formatINR(a.total)}</td>
               </tr>
             ))}
             <tr className={`${footerBg} font-semibold`}>

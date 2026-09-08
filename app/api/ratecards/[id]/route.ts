@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteRateCard, updateRateCard } from "@/lib/storage";
-import type { AddOnSelection, HamperBoxInstance, OrderType, RateCardLineItem } from "@/lib/types";
+import type { HamperBoxInstance, OrderType, RateCardLineItem } from "@/lib/types";
 
 type UpdateBody = {
   orderType: OrderType;
@@ -13,7 +13,6 @@ type UpdateBody = {
   addOnsCostTotal: number;
   lineItems: RateCardLineItem[];
   boxInstances?: HamperBoxInstance[];
-  addOnSelections?: AddOnSelection[];
   imageDataUrl: string;
 };
 
@@ -49,7 +48,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       addOnsCostTotal: typeof body.addOnsCostTotal === "number" ? body.addOnsCostTotal : 0,
       lineItems: body.lineItems ?? [],
       boxInstances: body.boxInstances,
-      addOnSelections: body.addOnSelections,
     },
     body.imageDataUrl
   );
