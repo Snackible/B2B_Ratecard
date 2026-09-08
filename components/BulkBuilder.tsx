@@ -14,6 +14,7 @@ type Props = {
   onDeleteItem: (itemId: string) => void;
   quantities: Map<string, number>;
   onToggle: (key: string) => void;
+  onQuantityChange: (key: string, quantity: number) => void;
   discountPercent: number;
   onDiscountChange: (percent: number) => void;
   clientName: string;
@@ -34,6 +35,7 @@ export default function BulkBuilder({
   onDeleteItem,
   quantities,
   onToggle,
+  onQuantityChange,
   discountPercent,
   onDiscountChange,
   clientName,
@@ -91,7 +93,9 @@ export default function BulkBuilder({
           <SegmentList
             rows={rows}
             selectedKeys={selectedKeys}
+            quantities={quantities}
             onToggle={onToggle}
+            onQuantityChange={onQuantityChange}
             onDeleteItem={onDeleteItem}
             onEditItem={(itemId) => {
               const item = itemsById.get(itemId);

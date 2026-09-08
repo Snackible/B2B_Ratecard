@@ -499,6 +499,7 @@ export default function OrderFlow({
               onDeleteItem={handleDeleteItem}
               quantities={quantities}
               onToggle={toggleRow}
+              onQuantityChange={setRowQuantity}
               discountPercent={discountPercent}
               onDiscountChange={setDiscountPercent}
               clientName={clientName}

@@ -16,12 +16,22 @@ function groupByCategory(rows: CatalogRow[]): [string, CatalogRow[]][] {
 type Props = {
   rows: CatalogRow[];
   selectedKeys: Set<string>;
+  quantities: Map<string, number>;
   onToggle: (key: string) => void;
+  onQuantityChange: (key: string, quantity: number) => void;
   onDeleteItem: (itemId: string) => void;
   onEditItem: (itemId: string) => void;
 };
 
-export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem, onEditItem }: Props) {
+export default function SegmentList({
+  rows,
+  selectedKeys,
+  quantities,
+  onToggle,
+  onQuantityChange,
+  onDeleteItem,
+  onEditItem,
+}: Props) {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -66,7 +76,9 @@ export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem
                 key={row.key}
                 row={row}
                 checked={selectedKeys.has(row.key)}
+                quantity={quantities.get(row.key)}
                 onToggle={onToggle}
+                onQuantityChange={onQuantityChange}
                 onDeleteItem={onDeleteItem}
                 onEditItem={onEditItem}
               />
@@ -94,7 +106,9 @@ export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem
                           key={row.key}
                           row={row}
                           checked={selectedKeys.has(row.key)}
+                          quantity={quantities.get(row.key)}
                           onToggle={onToggle}
+                          onQuantityChange={onQuantityChange}
                           onDeleteItem={onDeleteItem}
                           onEditItem={onEditItem}
                         />
@@ -114,13 +128,17 @@ export default function SegmentList({ rows, selectedKeys, onToggle, onDeleteItem
 function Row({
   row,
   checked,
+  quantity,
   onToggle,
+  onQuantityChange,
   onDeleteItem,
   onEditItem,
 }: {
   row: CatalogRow;
   checked: boolean;
+  quantity: number | undefined;
   onToggle: (key: string) => void;
+  onQuantityChange: (key: string, quantity: number) => void;
   onDeleteItem: (itemId: string) => void;
   onEditItem: (itemId: string) => void;
 }) {
@@ -144,6 +162,15 @@ function Row({
         <span className="shrink-0 text-xs text-[var(--text-faint)]">({row.packLabel})</span>
         <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">{formatINR(row.mrp)}</span>
       </label>
+      {quantity !== undefined && (
+        <input
+          type="number"
+          min={1}
+          value={quantity}
+          onChange={(e) => onQuantityChange(row.key, Math.max(1, Number(e.target.value) || 1))}
+          className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
+        />
+      )}
       <button
         type="button"
         onClick={() => onEditItem(row.itemId)}
