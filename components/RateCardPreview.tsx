@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import type { SelectedRow } from "@/lib/rows";
-import { applyDiscount, formatINR } from "@/lib/rows";
+import { formatINR } from "@/lib/rows";
+import { computePricing } from "@/lib/pricing";
 import type { HamperBoxInstance } from "@/lib/types";
 import DiscountPicker from "./DiscountPicker";
 
@@ -43,26 +44,8 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
     year: "numeric",
   });
 
-  const flatSubtotal = rows.reduce((sum, row) => sum + row.mrp * row.quantity, 0);
-  const boxItemsSubtotal = (boxInstances ?? []).reduce(
-    (sum, box) => sum + box.lineItems.reduce((s, li) => s + li.mrp * li.quantity, 0),
-    0
-  );
-  const subtotal = flatSubtotal + boxItemsSubtotal;
-  const discountAmount = subtotal - applyDiscount(subtotal, discountPercent);
-  const boxCostTotal = (boxInstances ?? []).reduce((sum, box) => sum + box.boxCost, 0);
-  const transportAmount = transportCostEnabled ? transportCostAmount ?? 0 : 0;
-
-  // Add-ons are chosen per box; consolidate by name for one clean total line each.
-  const addOnTotalsByName = new Map<string, { quantity: number; total: number }>();
-  for (const box of boxInstances ?? []) {
-    for (const sel of box.addOnSelections) {
-      const existing = addOnTotalsByName.get(sel.name) ?? { quantity: 0, total: 0 };
-      addOnTotalsByName.set(sel.name, { quantity: existing.quantity + sel.quantity, total: existing.total + sel.total });
-    }
-  }
-  const addOnsTotal = [...addOnTotalsByName.values()].reduce((sum, a) => sum + a.total, 0);
-  const payableAmount = subtotal - discountAmount + boxCostTotal + transportAmount + addOnsTotal;
+  const { subtotal, discountAmount, boxCostTotal, transportAmount, addOnTotalsByName, payableAmount } =
+    computePricing({ rows, boxInstances, discountPercent, transportCostEnabled, transportCostAmount });
   const colCount = onRemove ? 8 : 7;
   const hasBoxes = Boolean(boxInstances && boxInstances.length > 0);
 

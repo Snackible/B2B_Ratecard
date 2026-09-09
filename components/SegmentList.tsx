@@ -150,30 +150,37 @@ function Row({
   }
 
   return (
-    <li className="group flex items-center gap-1 rounded-md hover:bg-[var(--input-bg)]">
-      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-sm text-[var(--text-primary)]">
+    <li
+      onClick={() => onToggle(row.key)}
+      className="group flex cursor-pointer items-center gap-1 rounded-md hover:bg-[var(--input-bg)]"
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-sm text-[var(--text-primary)]">
         <input
           type="checkbox"
           checked={checked}
-          onChange={() => onToggle(row.key)}
+          readOnly
           className="h-4 w-4 shrink-0 accent-[var(--accent)]"
         />
         <span className="min-w-0 flex-1 truncate">{row.name}</span>
         <span className="shrink-0 text-xs text-[var(--text-faint)]">({row.packLabel})</span>
         <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">{formatINR(row.mrp)}</span>
-      </label>
+      </div>
       {quantity !== undefined && (
         <input
           type="number"
           min={1}
           value={quantity}
+          onClick={(e) => e.stopPropagation()}
           onChange={(e) => onQuantityChange(row.key, Math.max(1, Number(e.target.value) || 1))}
           className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
         />
       )}
       <button
         type="button"
-        onClick={() => onEditItem(row.itemId)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEditItem(row.itemId);
+        }}
         title="Edit item"
         aria-label={`Edit ${row.name}`}
         className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-faint)] opacity-0 group-hover:opacity-100 hover:text-[var(--accent)] focus-visible:opacity-100"
@@ -182,7 +189,10 @@ function Row({
       </button>
       <button
         type="button"
-        onClick={handleDelete}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDelete();
+        }}
         title="Delete from catalog"
         aria-label={`Delete ${row.name} from catalog`}
         className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-faint)] opacity-0 group-hover:opacity-100 hover:text-red-500 focus-visible:opacity-100"

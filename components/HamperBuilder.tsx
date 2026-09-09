@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { HamperBoxInstance, HamperConfig, Item, NewItemInput } from "@/lib/types";
 import { formatINR } from "@/lib/rows";
 import BoxManagerModal from "./BoxManagerModal";
+import PriceSummary from "./PriceSummary";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -18,6 +19,10 @@ type Props = {
   onUpdateBoxInstanceCost: (key: string, field: "boxCost" | "transportCost", value: number) => void;
   onUpdateBoxInstanceQuantity: (key: string, quantity: number) => void;
   onUpdateBoxInstanceLineItemQuantity: (key: string, itemId: string, quantity: number) => void;
+  onAddBoxInstanceLineItem: (key: string, item: Item) => void;
+  onRemoveBoxInstanceLineItem: (key: string, itemId: string) => void;
+  discountPercent: number;
+  onDiscountChange: (percent: number) => void;
   clientName: string;
   onClientNameChange: (name: string) => void;
   showClientName: boolean;
@@ -41,6 +46,10 @@ export default function HamperBuilder({
   onUpdateBoxInstanceCost,
   onUpdateBoxInstanceQuantity,
   onUpdateBoxInstanceLineItemQuantity,
+  onAddBoxInstanceLineItem,
+  onRemoveBoxInstanceLineItem,
+  discountPercent,
+  onDiscountChange,
   clientName,
   onClientNameChange,
   showClientName,
@@ -55,6 +64,8 @@ export default function HamperBuilder({
   const [showManager, setShowManager] = useState(false);
   const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
+  const [addToBoxKey, setAddToBoxKey] = useState<string | null>(null);
+  const [addToBoxSearch, setAddToBoxSearch] = useState("");
   const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
   const [itemSearch, setItemSearch] = useState("");
   const [expandedInstance, setExpandedInstance] = useState<string | null>(null);
@@ -270,12 +281,13 @@ export default function HamperBuilder({
                             return (
                               <li
                                 key={item.id}
-                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--input-bg)]"
+                                onClick={() => toggleItem(item.id)}
+                                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--input-bg)]"
                               >
                                 <input
                                   type="checkbox"
                                   checked={quantities.has(item.id)}
-                                  onChange={() => toggleItem(item.id)}
+                                  readOnly
                                   className="h-4 w-4 shrink-0 accent-[var(--accent)]"
                                 />
                                 <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{item.name}</span>
@@ -287,6 +299,7 @@ export default function HamperBuilder({
                                     type="number"
                                     min={1}
                                     value={qty}
+                                    onClick={(e) => e.stopPropagation()}
                                     onChange={(e) => setItemQty(item.id, Number(e.target.value) || 1)}
                                     className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
                                   />
@@ -381,27 +394,89 @@ export default function HamperBuilder({
                   </div>
                 </div>
                 {expandedInstance === b.key && (
-                  <ul className="mt-2 ml-2 space-y-1 border-l border-[var(--panel-border)] pl-3">
-                    {b.lineItems.map((li) => (
-                      <li key={li.itemId} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                        <span className="min-w-0 flex-1 truncate">{li.name}</span>
-                        <span className="tabular-nums text-[var(--text-faint)]">{formatINR(li.mrp)}</span>
+                  <div className="mt-2 ml-2 border-l border-[var(--panel-border)] pl-3">
+                    <ul className="space-y-1">
+                      {b.lineItems.map((li) => (
+                        <li key={li.itemId} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                          <span className="min-w-0 flex-1 truncate">{li.name}</span>
+                          <span className="tabular-nums text-[var(--text-faint)]">{formatINR(li.mrp)}</span>
+                          <input
+                            type="number"
+                            min={1}
+                            value={li.quantity}
+                            onChange={(e) =>
+                              onUpdateBoxInstanceLineItemQuantity(
+                                b.key,
+                                li.itemId,
+                                Math.max(1, Number(e.target.value) || 1)
+                              )
+                            }
+                            className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => onRemoveBoxInstanceLineItem(b.key, li.itemId)}
+                            title="Remove from box"
+                            aria-label={`Remove ${li.name} from ${b.boxName}`}
+                            className="shrink-0 text-[var(--text-faint)] hover:text-red-500"
+                          >
+                            ✕
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddToBoxKey((cur) => (cur === b.key ? null : b.key));
+                        setAddToBoxSearch("");
+                      }}
+                      className="mt-2 text-xs font-medium text-[var(--accent)] hover:underline"
+                    >
+                      {addToBoxKey === b.key ? "Cancel" : "+ Add item to this box"}
+                    </button>
+
+                    {addToBoxKey === b.key && (
+                      <div className="mt-2">
                         <input
-                          type="number"
-                          min={1}
-                          value={li.quantity}
-                          onChange={(e) =>
-                            onUpdateBoxInstanceLineItemQuantity(
-                              b.key,
-                              li.itemId,
-                              Math.max(1, Number(e.target.value) || 1)
-                            )
-                          }
-                          className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
+                          type="text"
+                          placeholder="Search products..."
+                          value={addToBoxSearch}
+                          onChange={(e) => setAddToBoxSearch(e.target.value)}
+                          className="w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
                         />
-                      </li>
-                    ))}
-                  </ul>
+                        <ul className="mt-1 max-h-40 overflow-y-auto">
+                          {items
+                            .filter((item) => !b.lineItems.some((li) => li.itemId === item.id))
+                            .filter((item) =>
+                              addToBoxSearch.trim()
+                                ? item.name.toLowerCase().includes(addToBoxSearch.trim().toLowerCase())
+                                : true
+                            )
+                            .slice(0, 50)
+                            .map((item) => (
+                              <li
+                                key={item.id}
+                                className="flex items-center justify-between gap-2 rounded px-1.5 py-1 text-xs hover:bg-[var(--input-bg)]"
+                              >
+                                <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{item.name}</span>
+                                <span className="tabular-nums shrink-0 text-[var(--text-muted)]">
+                                  {formatINR(item.mrp)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => onAddBoxInstanceLineItem(b.key, item)}
+                                  className="shrink-0 rounded bg-[var(--accent)] px-2 py-0.5 text-[var(--accent-fg)] hover:bg-[var(--accent-hover)]"
+                                >
+                                  + Add
+                                </button>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {hamperConfig.addOns.length > 0 && (
                   <div className="mt-2 ml-2 space-y-1 border-l border-[var(--panel-border)] pl-3">
@@ -472,6 +547,17 @@ export default function HamperBuilder({
               </li>
             ))}
           </ul>
+
+          <div className="mt-3 border-t border-[var(--panel-border)] pt-3">
+            <PriceSummary
+              rows={[]}
+              boxInstances={boxInstances}
+              discountPercent={discountPercent}
+              onDiscountChange={onDiscountChange}
+              transportCostEnabled
+              transportCostAmount={boxInstances.reduce((sum, b) => sum + b.transportCost, 0)}
+            />
+          </div>
         </div>
       )}
 

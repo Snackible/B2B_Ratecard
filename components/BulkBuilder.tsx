@@ -5,6 +5,7 @@ import type { Item, NewItemInput } from "@/lib/types";
 import { buildRows } from "@/lib/rows";
 import SegmentList from "./SegmentList";
 import AddItemModal from "./AddItemModal";
+import PriceSummary from "./PriceSummary";
 
 type Props = {
   items: Item[];
@@ -14,6 +15,8 @@ type Props = {
   quantities: Map<string, number>;
   onToggle: (key: string) => void;
   onQuantityChange: (key: string, quantity: number) => void;
+  discountPercent: number;
+  onDiscountChange: (percent: number) => void;
   clientName: string;
   onClientNameChange: (name: string) => void;
   showClientName: boolean;
@@ -33,6 +36,8 @@ export default function BulkBuilder({
   quantities,
   onToggle,
   onQuantityChange,
+  discountPercent,
+  onDiscountChange,
   clientName,
   onClientNameChange,
   showClientName,
@@ -49,6 +54,10 @@ export default function BulkBuilder({
   const rows = useMemo(() => buildRows(items), [items]);
   const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const selectedKeys = useMemo(() => new Set(quantities.keys()), [quantities]);
+  const selectedRows = useMemo(
+    () => rows.filter((r) => quantities.has(r.key)).map((r) => ({ ...r, quantity: quantities.get(r.key)! })),
+    [rows, quantities]
+  );
   const existingCategories = useMemo(
     () => [...new Set(items.map((i) => i.category))].sort((a, b) => a.localeCompare(b)),
     [items]
@@ -99,6 +108,16 @@ export default function BulkBuilder({
           />
         </div>
       </div>
+
+      {selectedRows.length > 0 && (
+        <PriceSummary
+          rows={selectedRows}
+          discountPercent={discountPercent}
+          onDiscountChange={onDiscountChange}
+          transportCostEnabled={transportCostEnabled}
+          transportCostAmount={transportCost}
+        />
+      )}
 
       <div className="flex flex-wrap items-center gap-5 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
         <div className="flex items-center gap-2">

@@ -172,6 +172,36 @@ export default function OrderFlow({
     );
   }
 
+  function addBoxInstanceLineItem(key: string, item: Item) {
+    setBoxInstances((prev) =>
+      prev.map((b) => {
+        if (b.key !== key || b.lineItems.some((li) => li.itemId === item.id)) return b;
+        return {
+          ...b,
+          lineItems: [
+            ...b.lineItems,
+            {
+              itemId: item.id,
+              name: item.name,
+              category: item.category,
+              packLabel: item.grammage ? `${item.grammage}g` : "Standard Pack",
+              grammage: item.grammage,
+              shelfLifeDays: item.shelfLifeDays,
+              mrp: item.mrp,
+              quantity: 1,
+            },
+          ],
+        };
+      })
+    );
+  }
+
+  function removeBoxInstanceLineItem(key: string, itemId: string) {
+    setBoxInstances((prev) =>
+      prev.map((b) => (b.key === key ? { ...b, lineItems: b.lineItems.filter((li) => li.itemId !== itemId) } : b))
+    );
+  }
+
   // Add-ons are chosen per box, not once for the whole hamper. A selection
   // defaults to "per box" so its quantity/total follow the box's own
   // quantity (e.g. 20 boxes -> 20x the add-on) until unchecked.
@@ -464,8 +494,8 @@ export default function OrderFlow({
 
   return (
     <div className="flex flex-col gap-4">
-      {step === "build" && orderType && (
-        <>
+      {orderType && (
+        <div className={step === "build" ? "flex flex-col gap-4" : "hidden"}>
           {isHamper ? (
             <HamperBuilder
               items={items}
@@ -478,6 +508,10 @@ export default function OrderFlow({
               onUpdateBoxInstanceCost={updateBoxInstanceCost}
               onUpdateBoxInstanceQuantity={updateBoxInstanceQuantity}
               onUpdateBoxInstanceLineItemQuantity={updateBoxInstanceLineItemQuantity}
+              onAddBoxInstanceLineItem={addBoxInstanceLineItem}
+              onRemoveBoxInstanceLineItem={removeBoxInstanceLineItem}
+              discountPercent={discountPercent}
+              onDiscountChange={setDiscountPercent}
               clientName={clientName}
               onClientNameChange={setClientName}
               showClientName={showClientName}
@@ -498,6 +532,8 @@ export default function OrderFlow({
               quantities={quantities}
               onToggle={toggleRow}
               onQuantityChange={setRowQuantity}
+              discountPercent={discountPercent}
+              onDiscountChange={setDiscountPercent}
               clientName={clientName}
               onClientNameChange={setClientName}
               showClientName={showClientName}
@@ -522,7 +558,7 @@ export default function OrderFlow({
               </button>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {step === "preview" && orderType && (
