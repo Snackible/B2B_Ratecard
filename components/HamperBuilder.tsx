@@ -548,7 +548,7 @@ export default function HamperBuilder({
             ))}
           </ul>
 
-          <div className="mt-3 border-t border-[var(--panel-border)] pt-3">
+          <div className="mt-3">
             <PriceSummary
               rows={[]}
               boxInstances={boxInstances}
