@@ -116,6 +116,8 @@ export default function BulkBuilder({
           onDiscountChange={onDiscountChange}
           transportCostEnabled={transportCostEnabled}
           transportCostAmount={transportCost}
+          onQuantityChange={onQuantityChange}
+          onRemove={onToggle}
         />
       )}
 

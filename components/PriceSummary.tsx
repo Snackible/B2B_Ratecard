@@ -13,6 +13,12 @@ type Props = {
   onDiscountChange: (percent: number) => void;
   transportCostEnabled?: boolean;
   transportCostAmount?: number;
+  /** Bulk rows only: edit quantity or unselect a row entirely. */
+  onQuantityChange?: (key: string, quantity: number) => void;
+  onRemove?: (key: string) => void;
+  /** Hamper box line items only: edit quantity or remove an item from its box. */
+  onLineItemQuantityChange?: (boxKey: string, itemId: string, quantity: number) => void;
+  onLineItemRemove?: (boxKey: string, itemId: string) => void;
 };
 
 export default function PriceSummary({
@@ -22,6 +28,10 @@ export default function PriceSummary({
   onDiscountChange,
   transportCostEnabled,
   transportCostAmount,
+  onQuantityChange,
+  onRemove,
+  onLineItemQuantityChange,
+  onLineItemRemove,
 }: Props) {
   const { subtotal, discountAmount, boxCostTotal, transportAmount, addOnTotalsByName, payableAmount } =
     computePricing({ rows, boxInstances, discountPercent, transportCostEnabled, transportCostAmount });
@@ -52,10 +62,41 @@ export default function PriceSummary({
                         <td className="py-1 px-2 text-right tabular-nums text-[var(--text-muted)]">
                           {formatINR(li.mrp)}
                         </td>
-                        <td className="py-1 px-2 text-right tabular-nums text-[var(--text-muted)]">×{li.quantity}</td>
+                        <td className="py-1 px-2 text-right">
+                          {onLineItemQuantityChange ? (
+                            <input
+                              type="number"
+                              min={1}
+                              value={li.quantity}
+                              onChange={(e) =>
+                                onLineItemQuantityChange(
+                                  box.key,
+                                  li.itemId,
+                                  Math.max(1, Number(e.target.value) || 1)
+                                )
+                              }
+                              className="w-14 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs tabular-nums text-[var(--text-primary)]"
+                            />
+                          ) : (
+                            <span className="tabular-nums text-[var(--text-muted)]">×{li.quantity}</span>
+                          )}
+                        </td>
                         <td className="py-1 pl-2 text-right tabular-nums font-medium text-[var(--text-primary)]">
                           {formatINR(li.mrp * li.quantity)}
                         </td>
+                        {onLineItemRemove && (
+                          <td className="py-1 pl-2 text-right">
+                            <button
+                              type="button"
+                              onClick={() => onLineItemRemove(box.key, li.itemId)}
+                              title="Remove from box"
+                              aria-label={`Remove ${li.name} from ${box.boxName}`}
+                              className="text-[var(--text-faint)] hover:text-red-500"
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -76,10 +117,35 @@ export default function PriceSummary({
                   <td className="py-2 px-2 text-right tabular-nums text-[var(--text-muted)]">
                     {formatINR(row.mrp)}
                   </td>
-                  <td className="py-2 px-2 text-right tabular-nums text-[var(--text-muted)]">×{row.quantity}</td>
+                  <td className="py-2 px-2 text-right">
+                    {onQuantityChange ? (
+                      <input
+                        type="number"
+                        min={1}
+                        value={row.quantity}
+                        onChange={(e) => onQuantityChange(row.key, Math.max(1, Number(e.target.value) || 1))}
+                        className="w-14 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs tabular-nums text-[var(--text-primary)]"
+                      />
+                    ) : (
+                      <span className="tabular-nums text-[var(--text-muted)]">×{row.quantity}</span>
+                    )}
+                  </td>
                   <td className="py-2 pr-4 pl-2 text-right tabular-nums font-medium text-[var(--text-primary)]">
                     {formatINR(row.mrp * row.quantity)}
                   </td>
+                  {onRemove && (
+                    <td className="py-2 pr-4 pl-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => onRemove(row.key)}
+                        title="Remove from rate card"
+                        aria-label={`Remove ${row.name} from rate card`}
+                        className="text-[var(--text-faint)] hover:text-red-500"
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

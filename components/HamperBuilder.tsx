@@ -556,6 +556,8 @@ export default function HamperBuilder({
               onDiscountChange={onDiscountChange}
               transportCostEnabled
               transportCostAmount={boxInstances.reduce((sum, b) => sum + b.transportCost, 0)}
+              onLineItemQuantityChange={onUpdateBoxInstanceLineItemQuantity}
+              onLineItemRemove={onRemoveBoxInstanceLineItem}
             />
           </div>
         </div>
