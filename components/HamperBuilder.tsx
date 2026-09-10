@@ -64,11 +64,8 @@ export default function HamperBuilder({
   const [showManager, setShowManager] = useState(false);
   const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
-  const [addToBoxKey, setAddToBoxKey] = useState<string | null>(null);
-  const [addToBoxSearch, setAddToBoxSearch] = useState("");
   const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
   const [itemSearch, setItemSearch] = useState("");
-  const [expandedInstance, setExpandedInstance] = useState<string | null>(null);
 
   const hasUnassignedBoxes = useMemo(() => hamperConfig.boxes.some((b) => !b.boxTypeId), [hamperConfig.boxes]);
 
@@ -335,16 +332,12 @@ export default function HamperBuilder({
             {boxInstances.map((b) => (
               <li key={b.key} className="py-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <button
-                    onClick={() => setExpandedInstance((cur) => (cur === b.key ? null : b.key))}
-                    className="min-w-0 flex-1 text-left"
-                  >
+                  <div className="min-w-0 flex-1">
                     <span className="text-sm font-medium text-[var(--text-primary)]">{b.boxName}</span>
                     <span className="ml-2 text-xs text-[var(--text-muted)]">
-                      {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"} &middot;{" "}
-                      {expandedInstance === b.key ? "hide" : "edit"} items
+                      {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"}
                     </span>
-                  </button>
+                  </div>
                   <div className="flex items-center gap-3">
                     <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
                       Qty
@@ -393,91 +386,6 @@ export default function HamperBuilder({
                     </button>
                   </div>
                 </div>
-                {expandedInstance === b.key && (
-                  <div className="mt-2 ml-2 border-l border-[var(--panel-border)] pl-3">
-                    <ul className="space-y-1">
-                      {b.lineItems.map((li) => (
-                        <li key={li.itemId} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                          <span className="min-w-0 flex-1 truncate">{li.name}</span>
-                          <span className="tabular-nums text-[var(--text-faint)]">{formatINR(li.mrp)}</span>
-                          <input
-                            type="number"
-                            min={1}
-                            value={li.quantity}
-                            onChange={(e) =>
-                              onUpdateBoxInstanceLineItemQuantity(
-                                b.key,
-                                li.itemId,
-                                Math.max(1, Number(e.target.value) || 1)
-                              )
-                            }
-                            className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => onRemoveBoxInstanceLineItem(b.key, li.itemId)}
-                            title="Remove from box"
-                            aria-label={`Remove ${li.name} from ${b.boxName}`}
-                            className="shrink-0 text-[var(--text-faint)] hover:text-red-500"
-                          >
-                            ✕
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAddToBoxKey((cur) => (cur === b.key ? null : b.key));
-                        setAddToBoxSearch("");
-                      }}
-                      className="mt-2 text-xs font-medium text-[var(--accent)] hover:underline"
-                    >
-                      {addToBoxKey === b.key ? "Cancel" : "+ Add item to this box"}
-                    </button>
-
-                    {addToBoxKey === b.key && (
-                      <div className="mt-2">
-                        <input
-                          type="text"
-                          placeholder="Search products..."
-                          value={addToBoxSearch}
-                          onChange={(e) => setAddToBoxSearch(e.target.value)}
-                          className="w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
-                        />
-                        <ul className="mt-1 max-h-40 overflow-y-auto">
-                          {items
-                            .filter((item) => !b.lineItems.some((li) => li.itemId === item.id))
-                            .filter((item) =>
-                              addToBoxSearch.trim()
-                                ? item.name.toLowerCase().includes(addToBoxSearch.trim().toLowerCase())
-                                : true
-                            )
-                            .slice(0, 50)
-                            .map((item) => (
-                              <li
-                                key={item.id}
-                                className="flex items-center justify-between gap-2 rounded px-1.5 py-1 text-xs hover:bg-[var(--input-bg)]"
-                              >
-                                <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{item.name}</span>
-                                <span className="tabular-nums shrink-0 text-[var(--text-muted)]">
-                                  {formatINR(item.mrp)}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => onAddBoxInstanceLineItem(b.key, item)}
-                                  className="shrink-0 rounded bg-[var(--accent)] px-2 py-0.5 text-[var(--accent-fg)] hover:bg-[var(--accent-hover)]"
-                                >
-                                  + Add
-                                </button>
-                              </li>
-                            ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
                 {hamperConfig.addOns.length > 0 && (
                   <div className="mt-2 ml-2 space-y-1 border-l border-[var(--panel-border)] pl-3">
                     <div className="text-[10px] font-semibold tracking-wide text-[var(--text-faint)] uppercase">
@@ -556,8 +464,11 @@ export default function HamperBuilder({
               onDiscountChange={onDiscountChange}
               transportCostEnabled
               transportCostAmount={boxInstances.reduce((sum, b) => sum + b.transportCost, 0)}
+              showTotals={false}
               onLineItemQuantityChange={onUpdateBoxInstanceLineItemQuantity}
               onLineItemRemove={onRemoveBoxInstanceLineItem}
+              items={items}
+              onAddLineItem={onAddBoxInstanceLineItem}
             />
           </div>
         </div>

@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { SelectedRow } from "@/lib/rows";
 import { formatINR } from "@/lib/rows";
 import { computePricing } from "@/lib/pricing";
-import type { HamperBoxInstance } from "@/lib/types";
+import type { HamperBoxInstance, Item } from "@/lib/types";
 import DiscountPicker from "./DiscountPicker";
 
 type Props = {
@@ -13,12 +14,17 @@ type Props = {
   onDiscountChange: (percent: number) => void;
   transportCostEnabled?: boolean;
   transportCostAmount?: number;
+  /** When false, only the item table and Subtotal are shown — discount/box
+   *  cost/transport/payable are left for the dedicated preview step. */
+  showTotals?: boolean;
   /** Bulk rows only: edit quantity or unselect a row entirely. */
   onQuantityChange?: (key: string, quantity: number) => void;
   onRemove?: (key: string) => void;
-  /** Hamper box line items only: edit quantity or remove an item from its box. */
+  /** Hamper box line items only: edit quantity, remove, or add an item to a box. */
   onLineItemQuantityChange?: (boxKey: string, itemId: string, quantity: number) => void;
   onLineItemRemove?: (boxKey: string, itemId: string) => void;
+  items?: Item[];
+  onAddLineItem?: (boxKey: string, item: Item) => void;
 };
 
 export default function PriceSummary({
@@ -28,14 +34,19 @@ export default function PriceSummary({
   onDiscountChange,
   transportCostEnabled,
   transportCostAmount,
+  showTotals = true,
   onQuantityChange,
   onRemove,
   onLineItemQuantityChange,
   onLineItemRemove,
+  items,
+  onAddLineItem,
 }: Props) {
   const { subtotal, discountAmount, boxCostTotal, transportAmount, addOnTotalsByName, payableAmount } =
     computePricing({ rows, boxInstances, discountPercent, transportCostEnabled, transportCostAmount });
   const hasBoxes = Boolean(boxInstances && boxInstances.length > 0);
+  const [addToBoxKey, setAddToBoxKey] = useState<string | null>(null);
+  const [addToBoxSearch, setAddToBoxSearch] = useState("");
 
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] shadow-sm">
@@ -104,6 +115,60 @@ export default function PriceSummary({
               ) : (
                 <p className="text-xs text-[var(--text-faint)] italic">No items in this box yet.</p>
               )}
+
+              {onAddLineItem && items && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddToBoxKey((cur) => (cur === box.key ? null : box.key));
+                      setAddToBoxSearch("");
+                    }}
+                    className="text-xs font-medium text-[var(--accent)] hover:underline"
+                  >
+                    {addToBoxKey === box.key ? "Cancel" : "+ Add item to this box"}
+                  </button>
+                  {addToBoxKey === box.key && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={addToBoxSearch}
+                        onChange={(e) => setAddToBoxSearch(e.target.value)}
+                        className="w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
+                      />
+                      <ul className="mt-1 max-h-40 overflow-y-auto">
+                        {items
+                          .filter((item) => !box.lineItems.some((li) => li.itemId === item.id))
+                          .filter((item) =>
+                            addToBoxSearch.trim()
+                              ? item.name.toLowerCase().includes(addToBoxSearch.trim().toLowerCase())
+                              : true
+                          )
+                          .slice(0, 50)
+                          .map((item) => (
+                            <li
+                              key={item.id}
+                              className="flex items-center justify-between gap-2 rounded px-1.5 py-1 text-xs hover:bg-[var(--input-bg)]"
+                            >
+                              <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{item.name}</span>
+                              <span className="tabular-nums shrink-0 text-[var(--text-muted)]">
+                                {formatINR(item.mrp)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => onAddLineItem(box.key, item)}
+                                className="shrink-0 rounded bg-[var(--accent)] px-2 py-0.5 text-[var(--accent-fg)] hover:bg-[var(--accent-hover)]"
+                              >
+                                + Add
+                              </button>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -155,18 +220,22 @@ export default function PriceSummary({
 
       <div className="divide-y divide-[var(--panel-border)] border-t border-[var(--panel-border)] text-sm">
         <SummaryRow label="Subtotal" value={formatINR(subtotal)} />
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
-          <DiscountPicker value={discountPercent} onChange={onDiscountChange} hideLabel />
-          <span className="tabular-nums font-semibold text-[var(--text-primary)]">
-            {formatINR(discountAmount > 0 ? -discountAmount : 0)}
-          </span>
-        </div>
-        {hasBoxes && <SummaryRow label="Box cost" value={formatINR(boxCostTotal)} />}
-        {transportCostEnabled && <SummaryRow label="Transport cost" value={formatINR(transportAmount)} />}
-        {[...addOnTotalsByName.entries()].map(([name, a]) => (
-          <SummaryRow key={name} label={`${name} (${a.quantity})`} value={formatINR(a.total)} />
-        ))}
-        <SummaryRow label="Payable Amount" value={formatINR(payableAmount)} bold />
+        {showTotals && (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+              <DiscountPicker value={discountPercent} onChange={onDiscountChange} hideLabel />
+              <span className="tabular-nums font-semibold text-[var(--text-primary)]">
+                {formatINR(discountAmount > 0 ? -discountAmount : 0)}
+              </span>
+            </div>
+            {hasBoxes && <SummaryRow label="Box cost" value={formatINR(boxCostTotal)} />}
+            {transportCostEnabled && <SummaryRow label="Transport cost" value={formatINR(transportAmount)} />}
+            {[...addOnTotalsByName.entries()].map(([name, a]) => (
+              <SummaryRow key={name} label={`${name} (${a.quantity})`} value={formatINR(a.total)} />
+            ))}
+            <SummaryRow label="Payable Amount" value={formatINR(payableAmount)} bold />
+          </>
+        )}
       </div>
     </div>
   );
