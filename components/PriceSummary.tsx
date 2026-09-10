@@ -126,7 +126,7 @@ export default function PriceSummary({
                     }}
                     className="text-xs font-medium text-[var(--accent)] hover:underline"
                   >
-                    {addToBoxKey === box.key ? "Cancel" : "+ Add item to this box"}
+                    {addToBoxKey === box.key ? "Cancel" : "+ Add item"}
                   </button>
                   {addToBoxKey === box.key && (
                     <div className="mt-2">

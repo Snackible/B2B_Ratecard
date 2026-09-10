@@ -389,7 +389,7 @@ export default function HamperBuilder({
                 {hamperConfig.addOns.length > 0 && (
                   <div className="mt-2 ml-2 space-y-1 border-l border-[var(--panel-border)] pl-3">
                     <div className="text-[10px] font-semibold tracking-wide text-[var(--text-faint)] uppercase">
-                      Add-ons for this box
+                      Add-ons
                     </div>
                     {hamperConfig.addOns.map((addOn) => {
                       const sel = b.addOnSelections.find((a) => a.addOnId === addOn.id);
