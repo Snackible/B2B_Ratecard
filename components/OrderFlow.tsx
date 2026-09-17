@@ -359,6 +359,23 @@ export default function OrderFlow({
     return false;
   }
 
+  // Saving to history is best-effort: a write failure here (e.g. the storage
+  // backend being unavailable) should never block the file the user is
+  // actually waiting on.
+  async function trySaveRateCard(dataUrl: string): Promise<boolean> {
+    try {
+      await persistRateCard(dataUrl);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function saveResultMessage(saved: boolean): string {
+    if (saved) return editId ? "Updated and downloaded." : "Saved and downloaded.";
+    return "Downloaded — couldn't save to Saved Rate Cards history.";
+  }
+
   async function handleSaveAndDownload() {
     if (!orderType || !canProceedFromBuild || !requireClientName()) return;
     setBusy(true);
@@ -372,11 +389,11 @@ export default function OrderFlow({
       a.download = filename.replace(/\s+/g, "-").toLowerCase();
       a.click();
 
-      await persistRateCard(dataUrl);
-      setMessage(editId ? "Updated and downloaded." : "Saved and downloaded.");
+      const saved = await trySaveRateCard(dataUrl);
+      setMessage(saveResultMessage(saved));
       router.refresh();
     } catch {
-      setMessage("Could not save/download the rate card.");
+      setMessage("Could not download the rate card.");
     } finally {
       setBusy(false);
     }
@@ -388,7 +405,6 @@ export default function OrderFlow({
     setMessage(null);
     try {
       const dataUrl = await renderJpeg();
-      await persistRateCard(dataUrl);
       const csv = buildRateCardCsv({
         orderType,
         rows: isHamper ? [] : selectedRows,
@@ -398,10 +414,11 @@ export default function OrderFlow({
         transportCostAmount: transportAmountForSave,
       });
       downloadCsv(`ratecard-${clientName.trim()}.csv`.replace(/\s+/g, "-").toLowerCase(), csv);
-      setMessage(editId ? "Updated and downloaded." : "Saved and downloaded.");
+      const saved = await trySaveRateCard(dataUrl);
+      setMessage(saveResultMessage(saved));
       router.refresh();
     } catch {
-      setMessage("Could not save/download the rate card.");
+      setMessage("Could not download the rate card.");
     } finally {
       setBusy(false);
     }
@@ -413,7 +430,6 @@ export default function OrderFlow({
     setMessage(null);
     try {
       const dataUrl = await renderJpeg();
-      await persistRateCard(dataUrl);
       const buffer = await buildRateCardExcel({
         orderType,
         rows: isHamper ? [] : selectedRows,
@@ -425,10 +441,11 @@ export default function OrderFlow({
         showClientName,
       });
       downloadExcel(`ratecard-${clientName.trim()}.xlsx`.replace(/\s+/g, "-").toLowerCase(), buffer);
-      setMessage(editId ? "Updated and downloaded." : "Saved and downloaded.");
+      const saved = await trySaveRateCard(dataUrl);
+      setMessage(saveResultMessage(saved));
       router.refresh();
     } catch {
-      setMessage("Could not save/download the rate card.");
+      setMessage("Could not download the rate card.");
     } finally {
       setBusy(false);
     }

@@ -1,0 +1,85 @@
+{
+  "boxTypes": [],
+  "boxes": [
+    {
+      "name": "Zepto Box",
+      "boxTypeId": null,
+      "cost": 40,
+      "transportCost": 40,
+      "id": "70a94b7a-6179-477c-9229-97d94207cb4a",
+      "minItems": null,
+      "maxItems": 6
+    },
+    {
+      "name": "Best seller box of 10",
+      "boxTypeId": null,
+      "cost": 60,
+      "transportCost": 60,
+      "id": "f6870610-1b95-4790-bad4-44c0f9958768",
+      "minItems": null,
+      "maxItems": 10
+    },
+    {
+      "name": "Best seller box of 17",
+      "boxTypeId": null,
+      "cost": 80,
+      "transportCost": 80,
+      "id": "61c3b4a2-89fb-4f69-903b-c91e14f7cb5e",
+      "minItems": null,
+      "maxItems": 17
+    },
+    {
+      "name": "Red Magnetic",
+      "boxTypeId": null,
+      "cost": 200,
+      "transportCost": 80,
+      "id": "5582856a-c92a-4941-ae12-07f329dbf2bf",
+      "minItems": null,
+      "maxItems": 10
+    },
+    {
+      "name": "Purple Diwali Box",
+      "boxTypeId": null,
+      "cost": 80,
+      "transportCost": 80,
+      "id": "18fed658-5d15-463c-a078-9516bbd6d341",
+      "minItems": null,
+      "maxItems": 17
+    },
+    {
+      "name": "Blue Kappa",
+      "boxTypeId": null,
+      "cost": 250,
+      "transportCost": 100,
+      "id": "598053e6-729c-4799-8892-75582f86068d",
+      "minItems": null,
+      "maxItems": 17
+    },
+    {
+      "name": "Pizza Box",
+      "boxTypeId": null,
+      "cost": 50,
+      "transportCost": 50,
+      "minItems": null,
+      "maxItems": 8,
+      "id": "f51d086b-3c61-45dc-a4b3-d15efd06c460"
+    }
+  ],
+  "addOns": [
+    {
+      "name": "Diya (Pack of two)",
+      "costPerUnit": 50,
+      "id": "3ce9639a-2caf-4712-8c3d-719dc0494f98"
+    },
+    {
+      "name": "Personalised Card",
+      "costPerUnit": 10,
+      "id": "cc42da13-0622-4c44-a572-4603a40bb102"
+    },
+    {
+      "name": "Personalised Logo",
+      "costPerUnit": 10,
+      "id": "f1dfad63-68aa-4e1f-af50-3cfa8b8c0589"
+    }
+  ]
+}
