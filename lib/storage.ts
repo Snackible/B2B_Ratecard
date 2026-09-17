@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { isDbConfigured, getDb } from "./mongo";
 import type {
   AddOn,
   AppSettings,
@@ -16,13 +17,11 @@ import type {
 } from "./types";
 import { applyDiscount } from "./rows";
 
-// Catalog/hamper-config/settings are committed JSON files rather than an external
-// object store — the Vercel Blob store previously used for this hit its Hobby-plan
-// monthly operation cap and got suspended, and a paid alternative wasn't an option.
-// Reads work fine in production (these files are bundled with the deployment);
-// writes below (add/edit/delete) only persist locally, since Vercel's production
-// filesystem is read-only outside /tmp. Rate card history is local-only for the
-// same reason — see LOCAL_RATECARDS_DIR.
+// Primary storage is MongoDB Atlas (free tier, no card required) when MONGODB_URI
+// is set. The committed local JSON files (data/catalog.json etc.) act as the seed/
+// backup: the very first read bootstraps the database from them, and they're also
+// the fallback used when no database is configured at all (e.g. local dev without
+// a MONGODB_URI). See lib/mongo.ts for the connection.
 const LOCAL_DIR = path.join(process.cwd(), "data");
 const LOCAL_CATALOG = path.join(LOCAL_DIR, "catalog.json");
 const LOCAL_SEED = path.join(LOCAL_DIR, "seed-catalog.json");
@@ -48,22 +47,54 @@ async function writeJsonFile(file: string, data: unknown) {
   await fs.writeFile(file, JSON.stringify(data, null, 2));
 }
 
+// A single "config" collection holds a handful of singleton documents (catalog,
+// hamper-config, settings), each identified by a fixed _id — simpler than a
+// collection-per-document for data this small. Mongo's driver defaults `_id` to
+// ObjectId, so these collections are typed with a string `_id` explicitly.
+type ConfigDoc = { _id: string } & Record<string, unknown>;
+
+function configCollection() {
+  return getDb().then((db) => db.collection<ConfigDoc>("config"));
+}
+
+async function getConfigDoc<T>(id: string): Promise<T | null> {
+  const collection = await configCollection();
+  const doc = await collection.findOne({ _id: id });
+  return doc ? (doc as unknown as T) : null;
+}
+
+async function setConfigDoc(id: string, data: Record<string, unknown>): Promise<void> {
+  const collection = await configCollection();
+  await collection.replaceOne({ _id: id }, { _id: id, ...data }, { upsert: true });
+}
+
 // ---------- Catalog ----------
 
 export async function getCatalog(): Promise<Item[]> {
+  if (isDbConfigured) {
+    const doc = await getConfigDoc<{ items: Item[] }>("catalog");
+    if (doc) return doc.items;
+    // Not seeded yet — bootstrap the database from the committed backup file.
+    const seed = (await readJsonFile<Item[] | null>(LOCAL_CATALOG, null)) ?? (await readJsonFile<Item[]>(LOCAL_SEED, []));
+    await saveCatalog(seed);
+    return seed;
+  }
   const existing = await readJsonFile<Item[] | null>(LOCAL_CATALOG, null);
   if (existing) return existing;
   const seed = await readJsonFile<Item[]>(LOCAL_SEED, []);
   try {
     await writeJsonFile(LOCAL_CATALOG, seed);
   } catch {
-    // Read-only filesystem (production without a persisted catalog.json) — the
-    // seed is still usable for this request even though it couldn't be cached.
+    // Read-only filesystem — the seed is still usable for this request.
   }
   return seed;
 }
 
 export async function saveCatalog(items: Item[]): Promise<void> {
+  if (isDbConfigured) {
+    await setConfigDoc("catalog", { items });
+    return;
+  }
   await writeJsonFile(LOCAL_CATALOG, items);
 }
 
@@ -119,10 +150,23 @@ function withHamperConfigDefaults(config: Partial<HamperConfig>): HamperConfig {
 }
 
 export async function getHamperConfig(): Promise<HamperConfig> {
+  if (isDbConfigured) {
+    const doc = await getConfigDoc<Partial<HamperConfig>>("hamper-config");
+    if (doc) return withHamperConfigDefaults(doc);
+    const seed = withHamperConfigDefaults(
+      await readJsonFile<Partial<HamperConfig>>(LOCAL_HAMPER_CONFIG, EMPTY_HAMPER_CONFIG)
+    );
+    await saveHamperConfig(seed);
+    return seed;
+  }
   return withHamperConfigDefaults(await readJsonFile<Partial<HamperConfig>>(LOCAL_HAMPER_CONFIG, EMPTY_HAMPER_CONFIG));
 }
 
 export async function saveHamperConfig(config: HamperConfig): Promise<void> {
+  if (isDbConfigured) {
+    await setConfigDoc("hamper-config", config);
+    return;
+  }
   await writeJsonFile(LOCAL_HAMPER_CONFIG, config);
 }
 
@@ -207,11 +251,23 @@ export async function removeAddOn(id: string): Promise<void> {
 // ---------- Settings ----------
 
 export async function getSettings(): Promise<AppSettings> {
+  if (isDbConfigured) {
+    const doc = await getConfigDoc<Partial<AppSettings>>("settings");
+    if (doc) return { ...DEFAULT_SETTINGS, ...doc };
+    const existing = await readJsonFile<Partial<AppSettings> | null>(LOCAL_SETTINGS, null);
+    const seeded = { ...DEFAULT_SETTINGS, ...existing };
+    await saveSettings(seeded);
+    return seeded;
+  }
   const existing = await readJsonFile<Partial<AppSettings> | null>(LOCAL_SETTINGS, null);
   return { ...DEFAULT_SETTINGS, ...existing };
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
+  if (isDbConfigured) {
+    await setConfigDoc("settings", settings);
+    return;
+  }
   await writeJsonFile(LOCAL_SETTINGS, settings);
 }
 
@@ -235,7 +291,22 @@ function withMetaDefaults(meta: Partial<RateCardMeta> & Pick<RateCardMeta, "id" 
   };
 }
 
+type RateCardDoc = RateCardSnapshot & { _id: string; imageBase64?: string };
+
+function ratecardsCollection() {
+  return getDb().then((db) => db.collection<RateCardDoc>("ratecards"));
+}
+
 export async function listRateCards(): Promise<RateCardMeta[]> {
+  if (isDbConfigured) {
+    const collection = await ratecardsCollection();
+    const docs = await collection
+      .find({}, { projection: { imageBase64: 0, lineItems: 0, boxInstances: 0 } })
+      .toArray();
+    return docs
+      .map((d) => withMetaDefaults(d as unknown as RateCardMeta))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
   const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
   return index.map(withMetaDefaults).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
@@ -261,26 +332,24 @@ function computeTotals(snapshot: {
   return { itemCount, totalAmount };
 }
 
-export async function saveRateCard(
-  snapshot: Omit<RateCardSnapshot, "id" | "createdAt" | "imageUrl" | "itemCount" | "totalAmount">,
-  imageDataUrl: string
-): Promise<RateCardMeta> {
-  const id = randomUUID();
-  const createdAt = new Date().toISOString();
-  const { itemCount, totalAmount } = computeTotals(snapshot);
-  const base64 = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
-  const imageBuffer = Buffer.from(base64, "base64");
-
-  await fs.mkdir(LOCAL_RATECARDS_DIR, { recursive: true });
-  const imgPath = path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`);
-  await fs.writeFile(imgPath, imageBuffer);
-  const imageUrl = `/api/ratecards/${id}/image`;
-
-  const fullSnapshot: RateCardSnapshot = { ...snapshot, id, createdAt, imageUrl, itemCount, totalAmount };
-  await writeJsonFile(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), fullSnapshot);
-
-  const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
-  const meta: RateCardMeta = {
+function buildMeta(
+  id: string,
+  createdAt: string,
+  imageUrl: string,
+  itemCount: number,
+  totalAmount: number,
+  snapshot: {
+    orderType: RateCardSnapshot["orderType"];
+    clientName: RateCardSnapshot["clientName"];
+    showClientName: boolean;
+    discountPercent: number;
+    transportCostEnabled: boolean;
+    transportCostAmount: number;
+    boxCostTotal: number;
+    addOnsCostTotal: number;
+  }
+): RateCardMeta {
+  return {
     id,
     orderType: snapshot.orderType,
     clientName: snapshot.clientName,
@@ -295,6 +364,31 @@ export async function saveRateCard(
     createdAt,
     imageUrl,
   };
+}
+
+export async function saveRateCard(
+  snapshot: Omit<RateCardSnapshot, "id" | "createdAt" | "imageUrl" | "itemCount" | "totalAmount">,
+  imageDataUrl: string
+): Promise<RateCardMeta> {
+  const id = randomUUID();
+  const createdAt = new Date().toISOString();
+  const { itemCount, totalAmount } = computeTotals(snapshot);
+  const base64 = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
+  const imageUrl = `/api/ratecards/${id}/image`;
+  const fullSnapshot: RateCardSnapshot = { ...snapshot, id, createdAt, imageUrl, itemCount, totalAmount };
+  const meta = buildMeta(id, createdAt, imageUrl, itemCount, totalAmount, snapshot);
+
+  if (isDbConfigured) {
+    const collection = await ratecardsCollection();
+    await collection.insertOne({ _id: id, ...fullSnapshot, imageBase64: base64 });
+    return meta;
+  }
+
+  await fs.mkdir(LOCAL_RATECARDS_DIR, { recursive: true });
+  await fs.writeFile(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`), Buffer.from(base64, "base64"));
+  await writeJsonFile(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), fullSnapshot);
+
+  const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
   index.push(meta);
   await writeJsonFile(LOCAL_INDEX, index);
   return meta;
@@ -311,27 +405,20 @@ export async function updateRateCard(
   const updatedAt = new Date().toISOString();
   const { itemCount, totalAmount } = computeTotals(snapshot);
   const base64 = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
-  const imageBuffer = Buffer.from(base64, "base64");
 
   const meta: RateCardMeta = {
-    id,
-    orderType: snapshot.orderType,
-    clientName: snapshot.clientName,
-    showClientName: snapshot.showClientName,
-    discountPercent: snapshot.discountPercent,
-    transportCostEnabled: snapshot.transportCostEnabled,
-    transportCostAmount: snapshot.transportCostAmount,
-    boxCostTotal: snapshot.boxCostTotal,
-    addOnsCostTotal: snapshot.addOnsCostTotal,
-    itemCount,
-    totalAmount,
-    createdAt: existing.createdAt,
+    ...buildMeta(id, existing.createdAt, existing.imageUrl, itemCount, totalAmount, snapshot),
     updatedAt,
-    imageUrl: existing.imageUrl,
   };
   const fullSnapshot: RateCardSnapshot = { ...snapshot, ...meta };
 
-  await fs.writeFile(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`), imageBuffer);
+  if (isDbConfigured) {
+    const collection = await ratecardsCollection();
+    await collection.replaceOne({ _id: id }, { ...fullSnapshot, imageBase64: base64 });
+    return meta;
+  }
+
+  await fs.writeFile(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`), Buffer.from(base64, "base64"));
   await writeJsonFile(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), fullSnapshot);
   const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
   await writeJsonFile(
@@ -342,6 +429,12 @@ export async function updateRateCard(
 }
 
 export async function deleteRateCard(id: string): Promise<void> {
+  if (isDbConfigured) {
+    const collection = await ratecardsCollection();
+    await collection.deleteOne({ _id: id });
+    return;
+  }
+
   await fs.rm(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`), { force: true });
   await fs.rm(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), { force: true });
   const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
@@ -352,7 +445,14 @@ export async function deleteRateCard(id: string): Promise<void> {
 }
 
 export async function getRateCard(id: string): Promise<RateCardSnapshot | null> {
-  const snapshot = await readJsonFile<RateCardSnapshot | null>(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), null);
+  let snapshot: RateCardSnapshot | null;
+  if (isDbConfigured) {
+    const collection = await ratecardsCollection();
+    const doc = await collection.findOne({ _id: id }, { projection: { imageBase64: 0 } });
+    snapshot = doc ? (doc as unknown as RateCardSnapshot) : null;
+  } else {
+    snapshot = await readJsonFile<RateCardSnapshot | null>(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), null);
+  }
   if (!snapshot) return null;
   return {
     ...withMetaDefaults(snapshot),
@@ -367,6 +467,15 @@ export async function getRateCard(id: string): Promise<RateCardSnapshot | null> 
   };
 }
 
-export async function getLocalRateCardImagePath(id: string): Promise<string> {
-  return path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`);
+export async function getRateCardImageBuffer(id: string): Promise<Buffer | null> {
+  if (isDbConfigured) {
+    const collection = await ratecardsCollection();
+    const doc = await collection.findOne({ _id: id }, { projection: { imageBase64: 1 } });
+    return doc?.imageBase64 ? Buffer.from(doc.imageBase64, "base64") : null;
+  }
+  try {
+    return await fs.readFile(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`));
+  } catch {
+    return null;
+  }
 }
