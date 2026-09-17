@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import type {
   AddOn,
   AppSettings,
@@ -16,21 +17,74 @@ import type {
 } from "./types";
 import { applyDiscount } from "./rows";
 
-// A Blob store connected from another project (or a project with multiple stores)
-// can get an env var name like `<STORE_NAME>_BLOB_READ_WRITE_TOKEN` instead of the
-// plain default — so look for either rather than assuming the exact name.
-function resolveBlobToken(): string | undefined {
-  if (process.env.BLOB_READ_WRITE_TOKEN) return process.env.BLOB_READ_WRITE_TOKEN;
-  const match = Object.entries(process.env).find(([key]) => key.endsWith("_BLOB_READ_WRITE_TOKEN"));
-  return match?.[1];
+// Object storage lives in Cloudflare R2 (S3-compatible) rather than Vercel Blob —
+// switched after the Vercel Blob store hit its Hobby-plan monthly operation cap
+// and got suspended. Falls back to local JSON files when R2 isn't configured
+// (local dev).
+const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
+const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
+
+const USE_REMOTE = Boolean(R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET_NAME);
+
+let r2Client: S3Client | null = null;
+function getR2Client(): S3Client {
+  if (!r2Client) {
+    r2Client = new S3Client({
+      region: "auto",
+      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId: R2_ACCESS_KEY_ID!, secretAccessKey: R2_SECRET_ACCESS_KEY! },
+    });
+  }
+  return r2Client;
 }
 
-const BLOB_TOKEN = resolveBlobToken();
-// Newer Blob stores skip a static token entirely: BLOB_STORE_ID plus Vercel's
-// automatic OIDC token are enough, and @vercel/blob picks both up on its own as
-// long as no `token` option is passed — so only add `token` when we have a real one.
-const USE_BLOB = Boolean(BLOB_TOKEN || process.env.BLOB_STORE_ID);
-const blobAuth = BLOB_TOKEN ? { token: BLOB_TOKEN } : {};
+function isNotFound(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === "NoSuchKey") return true;
+  const status = (err as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+  return status === 404;
+}
+
+async function readRemoteJson<T>(key: string, fallback: T): Promise<T> {
+  try {
+    const res = await getR2Client().send(new GetObjectCommand({ Bucket: R2_BUCKET_NAME!, Key: key }));
+    const text = await res.Body!.transformToString();
+    return JSON.parse(text) as T;
+  } catch (err) {
+    if (isNotFound(err)) return fallback;
+    throw err;
+  }
+}
+
+async function writeRemoteJson(key: string, data: unknown): Promise<void> {
+  await getR2Client().send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME!,
+      Key: key,
+      Body: JSON.stringify(data, null, 2),
+      ContentType: "application/json",
+    })
+  );
+}
+
+async function writeRemoteBinary(key: string, buffer: Buffer, contentType: string): Promise<void> {
+  await getR2Client().send(
+    new PutObjectCommand({ Bucket: R2_BUCKET_NAME!, Key: key, Body: buffer, ContentType: contentType })
+  );
+}
+
+async function deleteRemoteObjects(keys: string[]): Promise<void> {
+  await getR2Client().send(
+    new DeleteObjectsCommand({ Bucket: R2_BUCKET_NAME!, Delete: { Objects: keys.map((Key) => ({ Key })) } })
+  );
+}
+
+function remotePublicUrl(key: string): string {
+  return `${R2_PUBLIC_BASE_URL}/${key}`;
+}
 
 const LOCAL_DIR = path.join(process.cwd(), "data");
 const LOCAL_CATALOG = path.join(LOCAL_DIR, "catalog.json");
@@ -60,16 +114,12 @@ async function writeJsonFile(file: string, data: unknown) {
 // ---------- Catalog ----------
 
 export async function getCatalog(): Promise<Item[]> {
-  if (USE_BLOB) {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "catalog.json", limit: 1, ...blobAuth });
-    if (blobs.length === 0) {
-      const seed = await readJsonFile<Item[]>(LOCAL_SEED, []);
-      await saveCatalog(seed);
-      return seed;
-    }
-    const res = await fetch(blobs[0].url, { cache: "no-store" });
-    return (await res.json()) as Item[];
+  if (USE_REMOTE) {
+    const catalog = await readRemoteJson<Item[] | null>("catalog.json", null);
+    if (catalog) return catalog;
+    const seed = await readJsonFile<Item[]>(LOCAL_SEED, []);
+    await saveCatalog(seed);
+    return seed;
   }
   const existing = await readJsonFile<Item[] | null>(LOCAL_CATALOG, null);
   if (existing) return existing;
@@ -79,15 +129,8 @@ export async function getCatalog(): Promise<Item[]> {
 }
 
 export async function saveCatalog(items: Item[]): Promise<void> {
-  if (USE_BLOB) {
-    const { put } = await import("@vercel/blob");
-    await put("catalog.json", JSON.stringify(items, null, 2), {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json",
-      ...blobAuth,
-    });
+  if (USE_REMOTE) {
+    await writeRemoteJson("catalog.json", items);
     return;
   }
   await writeJsonFile(LOCAL_CATALOG, items);
@@ -145,26 +188,16 @@ function withHamperConfigDefaults(config: Partial<HamperConfig>): HamperConfig {
 }
 
 export async function getHamperConfig(): Promise<HamperConfig> {
-  if (USE_BLOB) {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "hamper-config.json", limit: 1, ...blobAuth });
-    if (blobs.length === 0) return EMPTY_HAMPER_CONFIG;
-    const res = await fetch(blobs[0].url, { cache: "no-store" });
-    return withHamperConfigDefaults((await res.json()) as Partial<HamperConfig>);
+  if (USE_REMOTE) {
+    const config = await readRemoteJson<Partial<HamperConfig> | null>("hamper-config.json", null);
+    return withHamperConfigDefaults(config ?? EMPTY_HAMPER_CONFIG);
   }
   return withHamperConfigDefaults(await readJsonFile<Partial<HamperConfig>>(LOCAL_HAMPER_CONFIG, EMPTY_HAMPER_CONFIG));
 }
 
 export async function saveHamperConfig(config: HamperConfig): Promise<void> {
-  if (USE_BLOB) {
-    const { put } = await import("@vercel/blob");
-    await put("hamper-config.json", JSON.stringify(config, null, 2), {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json",
-      ...blobAuth,
-    });
+  if (USE_REMOTE) {
+    await writeRemoteJson("hamper-config.json", config);
     return;
   }
   await writeJsonFile(LOCAL_HAMPER_CONFIG, config);
@@ -251,27 +284,17 @@ export async function removeAddOn(id: string): Promise<void> {
 // ---------- Settings ----------
 
 export async function getSettings(): Promise<AppSettings> {
-  if (USE_BLOB) {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "settings.json", limit: 1, ...blobAuth });
-    if (blobs.length === 0) return DEFAULT_SETTINGS;
-    const res = await fetch(blobs[0].url, { cache: "no-store" });
-    return { ...DEFAULT_SETTINGS, ...((await res.json()) as Partial<AppSettings>) };
+  if (USE_REMOTE) {
+    const settings = await readRemoteJson<Partial<AppSettings> | null>("settings.json", null);
+    return { ...DEFAULT_SETTINGS, ...settings };
   }
   const existing = await readJsonFile<Partial<AppSettings> | null>(LOCAL_SETTINGS, null);
   return { ...DEFAULT_SETTINGS, ...existing };
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
-  if (USE_BLOB) {
-    const { put } = await import("@vercel/blob");
-    await put("settings.json", JSON.stringify(settings, null, 2), {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json",
-      ...blobAuth,
-    });
+  if (USE_REMOTE) {
+    await writeRemoteJson("settings.json", settings);
     return;
   }
   await writeJsonFile(LOCAL_SETTINGS, settings);
@@ -298,12 +321,8 @@ function withMetaDefaults(meta: Partial<RateCardMeta> & Pick<RateCardMeta, "id" 
 }
 
 export async function listRateCards(): Promise<RateCardMeta[]> {
-  if (USE_BLOB) {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1, ...blobAuth });
-    if (blobs.length === 0) return [];
-    const res = await fetch(blobs[0].url, { cache: "no-store" });
-    const index = (await res.json()) as RateCardMeta[];
+  if (USE_REMOTE) {
+    const index = await readRemoteJson<RateCardMeta[]>("ratecards/index.json", []);
     return index.map(withMetaDefaults).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
   const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
@@ -343,28 +362,14 @@ export async function saveRateCard(
 
   let imageUrl: string;
 
-  if (USE_BLOB) {
-    const { put, list } = await import("@vercel/blob");
-    const imgResult = await put(`ratecards/${id}.jpg`, imageBuffer, {
-      access: "public",
-      addRandomSuffix: false,
-      contentType: "image/jpeg",
-      ...blobAuth,
-    });
-    imageUrl = imgResult.url;
+  if (USE_REMOTE) {
+    await writeRemoteBinary(`ratecards/${id}.jpg`, imageBuffer, "image/jpeg");
+    imageUrl = remotePublicUrl(`ratecards/${id}.jpg`);
 
     const fullSnapshot: RateCardSnapshot = { ...snapshot, id, createdAt, imageUrl, itemCount, totalAmount };
-    await put(`ratecards/${id}.json`, JSON.stringify(fullSnapshot, null, 2), {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json",
-      ...blobAuth,
-    });
+    await writeRemoteJson(`ratecards/${id}.json`, fullSnapshot);
 
-    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1, ...blobAuth });
-    const index: RateCardMeta[] =
-      blobs.length > 0 ? await (await fetch(blobs[0].url, { cache: "no-store" })).json() : [];
+    const index = await readRemoteJson<RateCardMeta[]>("ratecards/index.json", []);
     const meta: RateCardMeta = {
       id,
       orderType: snapshot.orderType,
@@ -381,13 +386,7 @@ export async function saveRateCard(
       imageUrl,
     };
     index.push(meta);
-    await put("ratecards/index.json", JSON.stringify(index, null, 2), {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json",
-      ...blobAuth,
-    });
+    await writeRemoteJson("ratecards/index.json", index);
     return meta;
   }
 
@@ -451,34 +450,13 @@ export async function updateRateCard(
   };
   const fullSnapshot: RateCardSnapshot = { ...snapshot, ...meta };
 
-  if (USE_BLOB) {
-    const { put, list } = await import("@vercel/blob");
-    await put(`ratecards/${id}.jpg`, imageBuffer, {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "image/jpeg",
-      ...blobAuth,
-    });
-    await put(`ratecards/${id}.json`, JSON.stringify(fullSnapshot, null, 2), {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json",
-      ...blobAuth,
-    });
+  if (USE_REMOTE) {
+    await writeRemoteBinary(`ratecards/${id}.jpg`, imageBuffer, "image/jpeg");
+    await writeRemoteJson(`ratecards/${id}.json`, fullSnapshot);
 
-    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1, ...blobAuth });
-    const index: RateCardMeta[] =
-      blobs.length > 0 ? await (await fetch(blobs[0].url, { cache: "no-store" })).json() : [];
+    const index = await readRemoteJson<RateCardMeta[]>("ratecards/index.json", []);
     const nextIndex = index.map((m) => (m.id === id ? meta : m));
-    await put("ratecards/index.json", JSON.stringify(nextIndex, null, 2), {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json",
-      ...blobAuth,
-    });
+    await writeRemoteJson("ratecards/index.json", nextIndex);
     return meta;
   }
 
@@ -493,28 +471,12 @@ export async function updateRateCard(
 }
 
 export async function deleteRateCard(id: string): Promise<void> {
-  if (USE_BLOB) {
-    const { del, list } = await import("@vercel/blob");
-    await del([`ratecards/${id}.jpg`, `ratecards/${id}.json`], { ...blobAuth });
-
-    const { blobs } = await list({ prefix: "ratecards/index.json", limit: 1, ...blobAuth });
-    const index: RateCardMeta[] =
-      blobs.length > 0 ? await (await fetch(blobs[0].url, { cache: "no-store" })).json() : [];
-    const { put } = await import("@vercel/blob");
-    await put(
+  if (USE_REMOTE) {
+    await deleteRemoteObjects([`ratecards/${id}.jpg`, `ratecards/${id}.json`]);
+    const index = await readRemoteJson<RateCardMeta[]>("ratecards/index.json", []);
+    await writeRemoteJson(
       "ratecards/index.json",
-      JSON.stringify(
-        index.filter((m) => m.id !== id),
-        null,
-        2
-      ),
-      {
-        access: "public",
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: "application/json",
-        ...blobAuth,
-      }
+      index.filter((m) => m.id !== id)
     );
     return;
   }
@@ -530,12 +492,8 @@ export async function deleteRateCard(id: string): Promise<void> {
 
 export async function getRateCard(id: string): Promise<RateCardSnapshot | null> {
   let snapshot: RateCardSnapshot | null;
-  if (USE_BLOB) {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: `ratecards/${id}.json`, limit: 1, ...blobAuth });
-    if (blobs.length === 0) return null;
-    const res = await fetch(blobs[0].url, { cache: "no-store" });
-    snapshot = (await res.json()) as RateCardSnapshot;
+  if (USE_REMOTE) {
+    snapshot = await readRemoteJson<RateCardSnapshot | null>(`ratecards/${id}.json`, null);
   } else {
     snapshot = await readJsonFile<RateCardSnapshot | null>(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), null);
   }
@@ -557,4 +515,4 @@ export async function getLocalRateCardImagePath(id: string): Promise<string> {
   return path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`);
 }
 
-export const isUsingBlob = USE_BLOB;
+export const isUsingRemoteStorage = USE_REMOTE;

@@ -9,8 +9,8 @@ const ROW_ALT = "FFF3F4F6";
 const FOOTER_BG = "FFE5E7EB";
 const WHITE = "FFFFFFFF";
 
-const BULK_COLUMNS = ["Category", "Product Name", "Grammage (g)", "MRP (INR)", "Shelf Life", "Qty", "Total"];
-const HAMPER_COLUMNS = ["Box", "Qty", "Product Name", "Grammage (g)", "MRP (INR)", "Item Qty", "Item Total"];
+const BULK_COLUMNS = ["S.No", "Category", "Product Name", "Grammage (g)", "MRP (INR)", "Shelf Life", "Qty", "Total"];
+const HAMPER_COLUMNS = ["S.No", "Box", "Qty", "Category", "Product Name", "Grammage (g)", "MRP (INR)", "Item Qty", "Item Total"];
 
 function styleHeaderRow(row: ExcelJS.Row) {
   row.eachCell((cell) => {
@@ -91,35 +91,74 @@ export async function buildRateCardExcel({
 
   if (isHamper) {
     for (const box of boxInstances!) {
-      for (const li of box.lineItems) {
+      box.lineItems.forEach((li, i) => {
         const total = li.mrp * li.quantity;
         itemsSubtotal += total;
-        const row = sheet.addRow([box.boxName, box.quantity, li.name, li.grammage ?? "", li.mrp, li.quantity, total]);
+        const row = sheet.addRow([
+          i + 1,
+          box.boxName,
+          box.quantity,
+          li.category,
+          li.name,
+          li.grammage ?? "",
+          li.mrp,
+          li.quantity,
+          total,
+        ]);
         styleDataRow(row, altToggle);
         altToggle = !altToggle;
-      }
+      });
       boxCostTotal += box.boxCost;
-      const boxCostRow = sheet.addRow([box.boxName, box.quantity, "(box cost)", "", "", "", box.boxCost]);
+      const boxCostRow = sheet.addRow(["", box.boxName, box.quantity, "", "(box cost)", "", "", "", box.boxCost]);
       styleDataRow(boxCostRow, altToggle);
       altToggle = !altToggle;
-      const transportRow = sheet.addRow([box.boxName, box.quantity, "(transport cost)", "", "", "", box.transportCost]);
+      const transportRow = sheet.addRow([
+        "",
+        box.boxName,
+        box.quantity,
+        "",
+        "(transport cost)",
+        "",
+        "",
+        "",
+        box.transportCost,
+      ]);
       styleDataRow(transportRow, altToggle);
       altToggle = !altToggle;
       for (const addOn of box.addOnSelections) {
         addOnsTotal += addOn.total;
-        const addOnRow = sheet.addRow([box.boxName, box.quantity, `(${addOn.name})`, "", "", addOn.quantity, addOn.total]);
+        const addOnRow = sheet.addRow([
+          "",
+          box.boxName,
+          box.quantity,
+          "",
+          `(${addOn.name})`,
+          "",
+          "",
+          addOn.quantity,
+          addOn.total,
+        ]);
         styleDataRow(addOnRow, altToggle);
         altToggle = !altToggle;
       }
     }
   } else {
-    for (const row of rows) {
+    rows.forEach((row, i) => {
       const total = row.mrp * row.quantity;
       itemsSubtotal += total;
-      const excelRow = sheet.addRow([row.category, row.name, row.grammage ?? "", row.mrp, row.shelfLifeDays ?? "", row.quantity, total]);
+      const excelRow = sheet.addRow([
+        i + 1,
+        row.category,
+        row.name,
+        row.grammage ?? "",
+        row.mrp,
+        row.shelfLifeDays ?? "",
+        row.quantity,
+        total,
+      ]);
       styleDataRow(excelRow, altToggle);
       altToggle = !altToggle;
-    }
+    });
   }
 
   const discountAmount = itemsSubtotal - applyDiscount(itemsSubtotal, discountPercent);
@@ -150,16 +189,28 @@ export async function buildRateCardExcel({
   }
   addFooterRow("Payable Amount", payable);
 
-  sheet.getColumn(1).width = isHamper ? 22 : 20;
-  sheet.getColumn(2).width = isHamper ? 8 : 30;
-  sheet.getColumn(3).width = isHamper ? 30 : 14;
-  sheet.getColumn(4).width = 14;
-  sheet.getColumn(5).width = 12;
-  sheet.getColumn(6).width = 10;
-  sheet.getColumn(7).width = 12;
+  sheet.getColumn(1).width = 6;
+  if (isHamper) {
+    sheet.getColumn(2).width = 22;
+    sheet.getColumn(3).width = 8;
+    sheet.getColumn(4).width = 20;
+    sheet.getColumn(5).width = 30;
+    sheet.getColumn(6).width = 14;
+    sheet.getColumn(7).width = 12;
+    sheet.getColumn(8).width = 10;
+    sheet.getColumn(9).width = 12;
+  } else {
+    sheet.getColumn(2).width = 20;
+    sheet.getColumn(3).width = 30;
+    sheet.getColumn(4).width = 14;
+    sheet.getColumn(5).width = 12;
+    sheet.getColumn(6).width = 10;
+    sheet.getColumn(7).width = 10;
+    sheet.getColumn(8).width = 12;
+  }
 
   // MRP and Total columns get a currency format; the Qty columns stay plain numbers.
-  const currencyCols = isHamper ? [5, 7] : [4, 7];
+  const currencyCols = isHamper ? [7, 9] : [5, 8];
   for (const col of currencyCols) {
     sheet.getColumn(col).numFmt = '"₹"#,##0';
   }

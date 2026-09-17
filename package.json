@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@vercel/blob": "^2.8.0",
+    "@aws-sdk/client-s3": "^3.1134.0",
     "exceljs": "^4.4.0",
     "html-to-image": "^1.11.13",
     "next": "16.3.3",

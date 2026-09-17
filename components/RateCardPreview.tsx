@@ -46,7 +46,7 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
 
   const { subtotal, discountAmount, boxCostTotal, transportAmount, addOnTotalsByName, payableAmount } =
     computePricing({ rows, boxInstances, discountPercent, transportCostEnabled, transportCostAmount });
-  const colCount = onRemove ? 8 : 7;
+  const colCount = onRemove ? 9 : 8;
   const hasBoxes = Boolean(boxInstances && boxInstances.length > 0);
 
   const cardBg = forceLight ? "bg-white" : "bg-[var(--panel-bg)]";
@@ -100,6 +100,8 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="bg-[#006600] text-white">
+                    <th className="border border-[#004d00] px-3 py-2 text-right">S.No</th>
+                    <th className="border border-[#004d00] px-3 py-2 text-left">Category</th>
                     <th className="border border-[#004d00] px-3 py-2 text-left">Product Name</th>
                     <th className="border border-[#004d00] px-3 py-2 text-right">Grammage (g)</th>
                     <th className="border border-[#004d00] px-3 py-2 text-right">MRP (INR)</th>
@@ -110,6 +112,8 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
                 <tbody>
                   {box.lineItems.map((li, i) => (
                     <tr key={li.itemId} className={i % 2 === 0 ? cardBg : rowAlt}>
+                      <td className={`border ${cellBorder} px-3 py-1.5 text-right`}>{i + 1}</td>
+                      <td className={`border ${cellBorder} px-3 py-1.5`}>{li.category}</td>
                       <td className={`border ${cellBorder} px-3 py-1.5`}>{li.name}</td>
                       <td className={`border ${cellBorder} px-3 py-1.5 text-right`}>{li.grammage ?? "—"}</td>
                       <td className={`border ${cellBorder} px-3 py-1.5 text-right`}>{li.mrp}</td>
@@ -128,6 +132,7 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-[#006600] text-white">
+              <th className="border border-[#004d00] px-3 py-2 text-right">S.No</th>
               <th className="border border-[#004d00] px-3 py-2 text-left">Category</th>
               <th className="border border-[#004d00] px-3 py-2 text-left">Product Name</th>
               <th className="border border-[#004d00] px-3 py-2 text-right">Grammage (g)</th>
@@ -148,6 +153,7 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
             ) : (
               rows.map((row, i) => (
                 <tr key={row.key} className={i % 2 === 0 ? cardBg : rowAlt}>
+                  <td className={`border ${cellBorder} px-3 py-1.5 text-right`}>{i + 1}</td>
                   <td className={`border ${cellBorder} px-3 py-1.5`}>{row.category}</td>
                   <td className={`border ${cellBorder} px-3 py-1.5`}>{row.name}</td>
                   <td className={`border ${cellBorder} px-3 py-1.5 text-right`}>{row.grammage ?? "—"}</td>

@@ -27,57 +27,79 @@ export function buildRateCardCsv({
   transportCostAmount: number;
 }): string {
   const out: (string | number)[][] = [];
+  const isHamper = orderType === "hamper" && Boolean(boxInstances);
+  const columnCount = isHamper ? 9 : 8;
 
-  if (orderType === "hamper" && boxInstances) {
-    out.push(["Box", "Qty", "Product Name", "Grammage (g)", "MRP (INR)", "Item Qty", "Item Total"]);
+  function footerRow(label: string, value: number): (string | number)[] {
+    return [label, ...new Array(columnCount - 2).fill(""), value];
+  }
+
+  if (isHamper && boxInstances) {
+    out.push(["S.No", "Box", "Qty", "Category", "Product Name", "Grammage (g)", "MRP (INR)", "Item Qty", "Item Total"]);
     for (const box of boxInstances) {
-      for (const li of box.lineItems) {
-        out.push([box.boxName, box.quantity, li.name, li.grammage ?? "", li.mrp, li.quantity, li.mrp * li.quantity]);
-      }
-      out.push([box.boxName, box.quantity, "(box cost)", "", "", "", box.boxCost]);
-      out.push([box.boxName, box.quantity, "(transport cost)", "", "", "", box.transportCost]);
+      box.lineItems.forEach((li, i) => {
+        out.push([
+          i + 1,
+          box.boxName,
+          box.quantity,
+          li.category,
+          li.name,
+          li.grammage ?? "",
+          li.mrp,
+          li.quantity,
+          li.mrp * li.quantity,
+        ]);
+      });
+      out.push(["", box.boxName, box.quantity, "", "(box cost)", "", "", "", box.boxCost]);
+      out.push(["", box.boxName, box.quantity, "", "(transport cost)", "", "", "", box.transportCost]);
       for (const addOn of box.addOnSelections) {
-        out.push([box.boxName, box.quantity, `(${addOn.name})`, "", "", addOn.quantity, addOn.total]);
+        out.push(["", box.boxName, box.quantity, "", `(${addOn.name})`, "", "", addOn.quantity, addOn.total]);
       }
     }
   } else {
-    out.push(["Category", "Product Name", "Grammage (g)", "MRP (INR)", "Shelf Life", "Qty", "Total"]);
-    for (const row of rows) {
-      out.push([row.category, row.name, row.grammage ?? "", row.mrp, row.shelfLifeDays ?? "", row.quantity, row.mrp * row.quantity]);
-    }
+    out.push(["S.No", "Category", "Product Name", "Grammage (g)", "MRP (INR)", "Shelf Life", "Qty", "Total"]);
+    rows.forEach((row, i) => {
+      out.push([
+        i + 1,
+        row.category,
+        row.name,
+        row.grammage ?? "",
+        row.mrp,
+        row.shelfLifeDays ?? "",
+        row.quantity,
+        row.mrp * row.quantity,
+      ]);
+    });
   }
 
-  const itemsSubtotal = orderType === "hamper" && boxInstances
+  const itemsSubtotal = isHamper && boxInstances
     ? boxInstances.reduce((sum, box) => sum + box.lineItems.reduce((s, li) => s + li.mrp * li.quantity, 0), 0)
     : rows.reduce((sum, row) => sum + row.mrp * row.quantity, 0);
-  const boxCostTotal = orderType === "hamper" && boxInstances ? boxInstances.reduce((s, b) => s + b.boxCost, 0) : 0;
+  const boxCostTotal = isHamper && boxInstances ? boxInstances.reduce((s, b) => s + b.boxCost, 0) : 0;
   const discountAmount = itemsSubtotal - applyDiscount(itemsSubtotal, discountPercent);
   const transportAmount = transportCostEnabled ? transportCostAmount : 0;
   const addOnsTotal =
-    orderType === "hamper" && boxInstances
+    isHamper && boxInstances
       ? boxInstances.reduce((sum, box) => sum + box.addOnSelections.reduce((s, a) => s + a.total, 0), 0)
       : 0;
   const payable = itemsSubtotal - discountAmount + boxCostTotal + transportAmount + addOnsTotal;
 
   out.push([]);
-  out.push(["Subtotal", "", "", "", "", "", itemsSubtotal]);
-  out.push([
-    `Discount${discountPercent > 0 ? ` (${discountPercent}%)` : ""}`,
-    "",
-    "",
-    "",
-    "",
-    "",
-    discountAmount > 0 ? -discountAmount : 0,
-  ]);
-  if (orderType === "hamper") {
-    out.push(["Box cost", "", "", "", "", "", boxCostTotal]);
-    out.push(["Add-ons", "", "", "", "", "", addOnsTotal]);
+  out.push(footerRow("Subtotal", itemsSubtotal));
+  out.push(
+    footerRow(
+      `Discount${discountPercent > 0 ? ` (${discountPercent}%)` : ""}`,
+      discountAmount > 0 ? -discountAmount : 0
+    )
+  );
+  if (isHamper) {
+    out.push(footerRow("Box cost", boxCostTotal));
+    out.push(footerRow("Add-ons", addOnsTotal));
   }
   if (transportCostEnabled) {
-    out.push(["Transport cost", "", "", "", "", "", transportAmount]);
+    out.push(footerRow("Transport cost", transportAmount));
   }
-  out.push(["Payable Amount", "", "", "", "", "", payable]);
+  out.push(footerRow("Payable Amount", payable));
 
   return toCsv(out);
 }
