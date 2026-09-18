@@ -23,6 +23,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     patch.largerPackGrammage = body.largerPackGrammage;
   if (body.largerPackMrp === null || typeof body.largerPackMrp === "number") patch.largerPackMrp = body.largerPackMrp;
   if (body.shelfLifeDays === null || typeof body.shelfLifeDays === "number") patch.shelfLifeDays = body.shelfLifeDays;
+  if (body.cogsCost === null || typeof body.cogsCost === "number") patch.cogsCost = body.cogsCost;
+  if (body.largerPackCogsCost === null || typeof body.largerPackCogsCost === "number")
+    patch.largerPackCogsCost = body.largerPackCogsCost;
 
   const item = await updateItem(id, patch);
   if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });

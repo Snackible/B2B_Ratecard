@@ -9,7 +9,9 @@
     "mrp": 50,
     "largerPackGrammage": 165,
     "largerPackMrp": 145,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 16.18,
+    "largerPackCogsCost": 45.98
   },
   {
     "id": "std-2",
@@ -21,7 +23,9 @@
     "mrp": 50,
     "largerPackGrammage": 165,
     "largerPackMrp": 145,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 17.4,
+    "largerPackCogsCost": 45.98
   },
   {
     "id": "std-3",
@@ -33,7 +37,9 @@
     "mrp": 60,
     "largerPackGrammage": 105,
     "largerPackMrp": 155,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 14.72,
+    "largerPackCogsCost": 35.89
   },
   {
     "id": "std-4",
@@ -45,7 +51,9 @@
     "mrp": 60,
     "largerPackGrammage": 105,
     "largerPackMrp": 155,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 12.62,
+    "largerPackCogsCost": 33.03
   },
   {
     "id": "std-5",
@@ -57,7 +65,9 @@
     "mrp": 40,
     "largerPackGrammage": 105,
     "largerPackMrp": 115,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 11.45,
+    "largerPackCogsCost": 27.43
   },
   {
     "id": "std-6",
@@ -69,7 +79,9 @@
     "mrp": 40,
     "largerPackGrammage": 105,
     "largerPackMrp": 115,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 10.23,
+    "largerPackCogsCost": 28.33
   },
   {
     "id": "std-7",
@@ -81,7 +93,9 @@
     "mrp": 60,
     "largerPackGrammage": 100,
     "largerPackMrp": 120,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 24.84,
+    "largerPackCogsCost": 41.9
   },
   {
     "id": "std-8",
@@ -93,7 +107,9 @@
     "mrp": 45,
     "largerPackGrammage": 165,
     "largerPackMrp": 145,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 13.15,
+    "largerPackCogsCost": 33.43
   },
   {
     "id": "std-9",
@@ -105,7 +121,9 @@
     "mrp": 45,
     "largerPackGrammage": 125,
     "largerPackMrp": 110,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 12.18,
+    "largerPackCogsCost": 29.31
   },
   {
     "id": "std-10",
@@ -117,7 +135,9 @@
     "mrp": 50,
     "largerPackGrammage": 165,
     "largerPackMrp": 145,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 16.7,
+    "largerPackCogsCost": 44.08
   },
   {
     "id": "std-11",
@@ -129,7 +149,9 @@
     "mrp": 50,
     "largerPackGrammage": 165,
     "largerPackMrp": 145,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 16.7,
+    "largerPackCogsCost": 44.08
   },
   {
     "id": "std-12",
@@ -141,7 +163,9 @@
     "mrp": 50,
     "largerPackGrammage": 165,
     "largerPackMrp": 145,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 16.7,
+    "largerPackCogsCost": 44.08
   },
   {
     "id": "std-13",
@@ -153,7 +177,9 @@
     "mrp": 50,
     "largerPackGrammage": 135,
     "largerPackMrp": 140,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-14",
@@ -165,7 +191,9 @@
     "mrp": 60,
     "largerPackGrammage": 180,
     "largerPackMrp": 170,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": 19.48,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-15",
@@ -177,7 +205,9 @@
     "mrp": 60,
     "largerPackGrammage": 180,
     "largerPackMrp": 170,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": 19.48,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-16",
@@ -189,7 +219,9 @@
     "mrp": 60,
     "largerPackGrammage": 63,
     "largerPackMrp": 115,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 20.44,
+    "largerPackCogsCost": 36.08
   },
   {
     "id": "std-17",
@@ -201,7 +233,9 @@
     "mrp": 80,
     "largerPackGrammage": 265,
     "largerPackMrp": 225,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 28.55,
+    "largerPackCogsCost": 136
   },
   {
     "id": "std-18",
@@ -213,7 +247,9 @@
     "mrp": 60,
     "largerPackGrammage": 63,
     "largerPackMrp": 115,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 19.72,
+    "largerPackCogsCost": 36.08
   },
   {
     "id": "std-19",
@@ -225,7 +261,9 @@
     "mrp": 50,
     "largerPackGrammage": 165,
     "largerPackMrp": 145,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 17.4,
+    "largerPackCogsCost": 45.98
   },
   {
     "id": "std-20",
@@ -237,7 +275,9 @@
     "mrp": 50,
     "largerPackGrammage": 165,
     "largerPackMrp": 145,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 15.04,
+    "largerPackCogsCost": 42.58
   },
   {
     "id": "std-21",
@@ -249,7 +289,9 @@
     "mrp": 60,
     "largerPackGrammage": 105,
     "largerPackMrp": 155,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 12.48,
+    "largerPackCogsCost": 29.7
   },
   {
     "id": "std-22",
@@ -261,7 +303,9 @@
     "mrp": 40,
     "largerPackGrammage": 105,
     "largerPackMrp": 115,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-23",
@@ -273,7 +317,9 @@
     "mrp": 40,
     "largerPackGrammage": 105,
     "largerPackMrp": 115,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-24",
@@ -285,7 +331,9 @@
     "mrp": 55,
     "largerPackGrammage": 63,
     "largerPackMrp": 100,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 19.39,
+    "largerPackCogsCost": 33.94
   },
   {
     "id": "std-25",
@@ -297,7 +345,9 @@
     "mrp": 50,
     "largerPackGrammage": 63,
     "largerPackMrp": 95,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 19.15,
+    "largerPackCogsCost": 33.94
   },
   {
     "id": "std-26",
@@ -309,7 +359,9 @@
     "mrp": 60,
     "largerPackGrammage": 63,
     "largerPackMrp": 115,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 19.96,
+    "largerPackCogsCost": 35.11
   },
   {
     "id": "std-27",
@@ -321,7 +373,9 @@
     "mrp": 50,
     "largerPackGrammage": 63,
     "largerPackMrp": 95,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 18.2,
+    "largerPackCogsCost": 29.83
   },
   {
     "id": "std-28",
@@ -333,7 +387,9 @@
     "mrp": 55,
     "largerPackGrammage": 63,
     "largerPackMrp": 100,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 18.2,
+    "largerPackCogsCost": 29.83
   },
   {
     "id": "std-29",
@@ -345,7 +401,9 @@
     "mrp": 45,
     "largerPackGrammage": 125,
     "largerPackMrp": 110,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": 12.15,
+    "largerPackCogsCost": 29.2
   },
   {
     "id": "std-30",
@@ -357,7 +415,9 @@
     "mrp": 50,
     "largerPackGrammage": 105,
     "largerPackMrp": 155,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 13,
+    "largerPackCogsCost": 31.13
   },
   {
     "id": "std-31",
@@ -369,7 +429,9 @@
     "mrp": 60,
     "largerPackGrammage": 105,
     "largerPackMrp": 155,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 15.41,
+    "largerPackCogsCost": 37.78
   },
   {
     "id": "std-32",
@@ -381,7 +443,9 @@
     "mrp": 60,
     "largerPackGrammage": 105,
     "largerPackMrp": 155,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 15.41,
+    "largerPackCogsCost": 37.78
   },
   {
     "id": "std-33",
@@ -393,7 +457,9 @@
     "mrp": 75,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 31.07,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-34",
@@ -405,7 +471,9 @@
     "mrp": 60,
     "largerPackGrammage": 155,
     "largerPackMrp": 180,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 19.06,
+    "largerPackCogsCost": 47.77
   },
   {
     "id": "std-35",
@@ -417,7 +485,9 @@
     "mrp": 115,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 41.96,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-36",
@@ -429,7 +499,9 @@
     "mrp": 115,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 41.96,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-37",
@@ -441,7 +513,9 @@
     "mrp": 115,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 41.96,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-38",
@@ -453,7 +527,9 @@
     "mrp": 70,
     "largerPackGrammage": 200,
     "largerPackMrp": 180,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 21.14,
+    "largerPackCogsCost": 50.72
   },
   {
     "id": "std-39",
@@ -465,7 +541,9 @@
     "mrp": 90,
     "largerPackGrammage": 200,
     "largerPackMrp": 225,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 26.39,
+    "largerPackCogsCost": 64.72
   },
   {
     "id": "std-40",
@@ -477,7 +555,9 @@
     "mrp": 90,
     "largerPackGrammage": 200,
     "largerPackMrp": 225,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 26.01,
+    "largerPackCogsCost": 63.72
   },
   {
     "id": "std-41",
@@ -489,7 +569,9 @@
     "mrp": 65,
     "largerPackGrammage": 150,
     "largerPackMrp": 185,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 18.65,
+    "largerPackCogsCost": 49.91
   },
   {
     "id": "std-42",
@@ -501,7 +583,9 @@
     "mrp": 65,
     "largerPackGrammage": 150,
     "largerPackMrp": 185,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 18.65,
+    "largerPackCogsCost": 49.91
   },
   {
     "id": "std-43",
@@ -513,7 +597,9 @@
     "mrp": 50,
     "largerPackGrammage": 135,
     "largerPackMrp": 99,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 16.49,
+    "largerPackCogsCost": 32.76
   },
   {
     "id": "std-44",
@@ -525,7 +611,9 @@
     "mrp": 50,
     "largerPackGrammage": 135,
     "largerPackMrp": 99,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 16.49,
+    "largerPackCogsCost": 32.76
   },
   {
     "id": "std-45",
@@ -537,7 +625,9 @@
     "mrp": 50,
     "largerPackGrammage": 135,
     "largerPackMrp": 99,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 15.77,
+    "largerPackCogsCost": 31.14
   },
   {
     "id": "std-46",
@@ -549,7 +639,9 @@
     "mrp": 60,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 135
+    "shelfLifeDays": 135,
+    "cogsCost": 17.54,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-47",
@@ -561,7 +653,9 @@
     "mrp": 60,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 135
+    "shelfLifeDays": 135,
+    "cogsCost": 14.68,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-48",
@@ -573,7 +667,9 @@
     "mrp": 35,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 135
+    "shelfLifeDays": 135,
+    "cogsCost": 11.77,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-49",
@@ -585,7 +681,9 @@
     "mrp": 35,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 135
+    "shelfLifeDays": 135,
+    "cogsCost": 11.77,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-50",
@@ -597,7 +695,9 @@
     "mrp": 35,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 135
+    "shelfLifeDays": 135,
+    "cogsCost": 11.77,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-51",
@@ -609,7 +709,9 @@
     "mrp": 50,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 135
+    "shelfLifeDays": 135,
+    "cogsCost": 19.14,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-52",
@@ -621,7 +723,9 @@
     "mrp": 50,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 135
+    "shelfLifeDays": 135,
+    "cogsCost": 19.57,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-53",
@@ -633,7 +737,9 @@
     "mrp": 70,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 30.35,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-54",
@@ -645,7 +751,9 @@
     "mrp": 85,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 35.95,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-55",
@@ -657,7 +765,9 @@
     "mrp": 85,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 35.6,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-56",
@@ -669,7 +779,9 @@
     "mrp": 85,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 32.24,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-57",
@@ -681,7 +793,9 @@
     "mrp": 85,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": 32.94,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-58",
@@ -693,7 +807,9 @@
     "mrp": 245,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": 94.5,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-59",
@@ -705,7 +821,9 @@
     "mrp": 445,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": 139.5,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-60",
@@ -717,7 +835,9 @@
     "mrp": 245,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": 94.5,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-61",
@@ -729,7 +849,9 @@
     "mrp": 245,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-62",
@@ -741,7 +863,9 @@
     "mrp": 245,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-63",
@@ -753,7 +877,9 @@
     "mrp": 60,
     "largerPackGrammage": 180,
     "largerPackMrp": 175,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": 20.22,
+    "largerPackCogsCost": 55.32
   },
   {
     "id": "std-64",
@@ -765,7 +891,9 @@
     "mrp": 399,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-65",
@@ -777,7 +905,9 @@
     "mrp": 250,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-66",
@@ -789,7 +919,9 @@
     "mrp": 350,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-67",
@@ -801,7 +933,9 @@
     "mrp": 250,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-68",
@@ -813,7 +947,9 @@
     "mrp": 170,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-69",
@@ -825,7 +961,9 @@
     "mrp": 170,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-70",
@@ -837,7 +975,9 @@
     "mrp": 170,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-71",
@@ -849,7 +989,9 @@
     "mrp": 170,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-72",
@@ -861,7 +1003,9 @@
     "mrp": 170,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-73",
@@ -873,7 +1017,9 @@
     "mrp": 170,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-74",
@@ -885,7 +1031,9 @@
     "mrp": 170,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-75",
@@ -897,7 +1045,9 @@
     "mrp": 170,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-76",
@@ -909,7 +1059,9 @@
     "mrp": 300,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-77",
@@ -921,7 +1073,9 @@
     "mrp": 300,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-78",
@@ -933,7 +1087,9 @@
     "mrp": 300,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "std-79",
@@ -945,7 +1101,9 @@
     "mrp": 300,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 270
+    "shelfLifeDays": 270,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-80",
@@ -957,7 +1115,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-81",
@@ -969,7 +1129,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-82",
@@ -981,7 +1143,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-83",
@@ -993,7 +1157,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-84",
@@ -1005,7 +1171,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-85",
@@ -1017,7 +1185,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-86",
@@ -1029,7 +1199,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-87",
@@ -1041,7 +1213,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-88",
@@ -1053,7 +1227,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-89",
@@ -1065,7 +1241,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-90",
@@ -1077,7 +1255,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-91",
@@ -1089,7 +1269,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-92",
@@ -1101,7 +1283,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-93",
@@ -1113,7 +1297,9 @@
     "mrp": 20,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-94",
@@ -1125,7 +1311,9 @@
     "mrp": 20,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-95",
@@ -1137,7 +1325,9 @@
     "mrp": 20,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-96",
@@ -1149,7 +1339,9 @@
     "mrp": 20,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 70
+    "shelfLifeDays": 70,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-97",
@@ -1161,7 +1353,9 @@
     "mrp": 20,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 70
+    "shelfLifeDays": 70,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-98",
@@ -1173,7 +1367,9 @@
     "mrp": 20,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 70
+    "shelfLifeDays": 70,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-99",
@@ -1185,7 +1381,9 @@
     "mrp": 20,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 70
+    "shelfLifeDays": 70,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-100",
@@ -1197,7 +1395,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-101",
@@ -1209,7 +1409,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-102",
@@ -1221,7 +1423,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 120
+    "shelfLifeDays": 120,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-103",
@@ -1233,7 +1437,9 @@
     "mrp": 35,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-104",
@@ -1245,7 +1451,9 @@
     "mrp": 35,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-105",
@@ -1257,7 +1465,9 @@
     "mrp": 35,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 180
+    "shelfLifeDays": 180,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-106",
@@ -1269,7 +1479,9 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   },
   {
     "id": "single-107",
@@ -1281,6 +1493,8 @@
     "mrp": 30,
     "largerPackGrammage": null,
     "largerPackMrp": null,
-    "shelfLifeDays": 90
+    "shelfLifeDays": 90,
+    "cogsCost": null,
+    "largerPackCogsCost": null
   }
 ]

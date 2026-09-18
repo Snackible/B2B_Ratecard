@@ -24,6 +24,8 @@ function formFromItem(item?: Item | null) {
     largerPackGrammage: item?.largerPackGrammage != null ? String(item.largerPackGrammage) : "",
     largerPackMrp: item?.largerPackMrp != null ? String(item.largerPackMrp) : "",
     shelfLifeDays: item?.shelfLifeDays != null ? String(item.shelfLifeDays) : "",
+    cogsCost: item?.cogsCost != null ? String(item.cogsCost) : "",
+    largerPackCogsCost: item?.largerPackCogsCost != null ? String(item.largerPackCogsCost) : "",
   };
 }
 
@@ -63,6 +65,8 @@ export default function AddItemModal({ onClose, onSubmit, existingCategories, ex
         largerPackGrammage: form.largerPackGrammage ? Number(form.largerPackGrammage) : null,
         largerPackMrp: form.largerPackMrp ? Number(form.largerPackMrp) : null,
         shelfLifeDays: form.shelfLifeDays ? Number(form.shelfLifeDays) : null,
+        cogsCost: form.cogsCost ? Number(form.cogsCost) : null,
+        largerPackCogsCost: form.largerPackCogsCost ? Number(form.largerPackCogsCost) : null,
       });
       onClose();
     } catch {
@@ -232,6 +236,22 @@ export default function AddItemModal({ onClose, onSubmit, existingCategories, ex
                 className={inputCls}
                 value={form.shelfLifeDays}
                 onChange={(e) => set("shelfLifeDays", e.target.value)}
+              />
+            </Field>
+            <Field label="COGS (₹) — internal only">
+              <input
+                type="number"
+                className={inputCls}
+                value={form.cogsCost}
+                onChange={(e) => set("cogsCost", e.target.value)}
+              />
+            </Field>
+            <Field label="Larger Pack COGS (₹) — internal only">
+              <input
+                type="number"
+                className={inputCls}
+                value={form.largerPackCogsCost}
+                onChange={(e) => set("largerPackCogsCost", e.target.value)}
               />
             </Field>
           </div>

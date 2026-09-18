@@ -15,10 +15,12 @@ import type {
 import { buildRows } from "@/lib/rows";
 import { buildRateCardCsv, downloadCsv } from "@/lib/csv";
 import { buildRateCardExcel, downloadExcel } from "@/lib/excel";
+import { computeCogsAnalysis, buildCogsAnalysisCsv, buildCogsAnalysisExcel } from "@/lib/cogsAnalysis";
 import OrderTypeSelect from "./OrderTypeSelect";
 import BulkBuilder from "./BulkBuilder";
 import HamperBuilder from "./HamperBuilder";
 import RateCardPreview from "./RateCardPreview";
+import CogsAnalysisCard from "./CogsAnalysisCard";
 
 type Step = "select" | "build" | "preview";
 
@@ -82,6 +84,10 @@ export default function OrderFlow({
   }, []);
 
   const exportRef = useRef<HTMLDivElement>(null);
+  const cogsExportRef = useRef<HTMLDivElement>(null);
+  const [cogsBusy, setCogsBusy] = useState(false);
+  const [cogsMessage, setCogsMessage] = useState<string | null>(null);
+  const [showCogsDownloadMenu, setShowCogsDownloadMenu] = useState(false);
 
   const rows = useMemo(() => buildRows(items), [items]);
   const selectedRows = useMemo(
@@ -105,6 +111,20 @@ export default function OrderFlow({
   const addOnsCostTotal = useMemo(
     () => boxInstances.reduce((sum, b) => sum + b.addOnSelections.reduce((s, a) => s + a.total, 0), 0),
     [boxInstances]
+  );
+
+  // Fully separate from the client-facing rate card: computed live from the catalog's
+  // internal cogsCost field, never persisted, never part of RateCardSnapshot/history.
+  const cogsAnalysis = useMemo(
+    () =>
+      computeCogsAnalysis({
+        items,
+        orderType: orderType ?? "bulk",
+        rows: selectedRows,
+        boxInstances: isHamper ? boxInstances : undefined,
+        discountPercent,
+      }),
+    [items, orderType, selectedRows, isHamper, boxInstances, discountPercent]
   );
 
   function toggleRow(key: string) {
@@ -451,6 +471,46 @@ export default function OrderFlow({
     }
   }
 
+  // COGS analysis downloads are entirely independent of the rate card's save/download
+  // flow above: no persistRateCard call, nothing written to Saved Rate Cards history.
+  async function handleDownloadCogsJpeg() {
+    if (!orderType || !cogsExportRef.current) return;
+    setCogsBusy(true);
+    setCogsMessage(null);
+    try {
+      const dataUrl = await toJpeg(cogsExportRef.current, { quality: 0.95, backgroundColor: "#ffffff", pixelRatio: 2 });
+      const a = document.createElement("a");
+      const filename = `cogs-analysis-${clientName.trim() || "untitled"}.jpg`;
+      a.href = dataUrl;
+      a.download = filename.replace(/\s+/g, "-").toLowerCase();
+      a.click();
+    } catch {
+      setCogsMessage("Could not download the COGS analysis.");
+    } finally {
+      setCogsBusy(false);
+    }
+  }
+
+  async function handleDownloadCogsCsv() {
+    if (!orderType) return;
+    const csv = buildCogsAnalysisCsv(cogsAnalysis, isHamper);
+    downloadCsv(`cogs-analysis-${clientName.trim() || "untitled"}.csv`.replace(/\s+/g, "-").toLowerCase(), csv);
+  }
+
+  async function handleDownloadCogsExcel() {
+    if (!orderType) return;
+    setCogsBusy(true);
+    setCogsMessage(null);
+    try {
+      const buffer = await buildCogsAnalysisExcel(cogsAnalysis, isHamper);
+      downloadExcel(`cogs-analysis-${clientName.trim() || "untitled"}.xlsx`.replace(/\s+/g, "-").toLowerCase(), buffer);
+    } catch {
+      setCogsMessage("Could not download the COGS analysis.");
+    } finally {
+      setCogsBusy(false);
+    }
+  }
+
   async function handleAddItem(input: NewItemInput) {
     const res = await fetch("/api/items", {
       method: "POST",
@@ -652,6 +712,61 @@ export default function OrderFlow({
               onRemove={orderType === "bulk" ? toggleRow : undefined}
             />
           </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
+            <span className="text-xs font-medium text-[var(--text-secondary)]">COGS Analysis (internal only)</span>
+            <div className="ml-auto flex items-center gap-3">
+              {cogsMessage && <span className="text-xs text-[var(--text-muted)]">{cogsMessage}</span>}
+              <button
+                onClick={handleDownloadCogsJpeg}
+                disabled={cogsBusy}
+                className="rounded-md border border-[var(--input-border)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--input-bg)] active:scale-[0.97] disabled:opacity-50"
+              >
+                {cogsBusy ? "Working..." : "Download JPEG"}
+              </button>
+              <div className="flex items-stretch">
+                <button
+                  onClick={handleDownloadCogsExcel}
+                  disabled={cogsBusy}
+                  className="rounded-l-md bg-[var(--accent)] px-3.5 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
+                >
+                  {cogsBusy ? "Working..." : "Download Excel"}
+                </button>
+                <div
+                  className="relative"
+                  onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) setShowCogsDownloadMenu(false);
+                  }}
+                >
+                  <button
+                    onClick={() => setShowCogsDownloadMenu((v) => !v)}
+                    disabled={cogsBusy}
+                    aria-label="Other download formats"
+                    className="h-full rounded-r-md border-l border-[var(--accent-fg)]/20 bg-[var(--accent)] px-2 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
+                  >
+                    <span aria-hidden>▾</span>
+                  </button>
+                  {showCogsDownloadMenu && (
+                    <div className="absolute right-0 z-10 mt-1 w-32 overflow-hidden rounded-md border border-[var(--input-border)] bg-[var(--panel-bg)] shadow-lg">
+                      <button
+                        onClick={() => {
+                          setShowCogsDownloadMenu(false);
+                          handleDownloadCogsCsv();
+                        }}
+                        className="block w-full px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--input-bg)]"
+                      >
+                        CSV
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-[var(--panel-border)] shadow-sm">
+            <CogsAnalysisCard analysis={cogsAnalysis} orderType={orderType} />
+          </div>
         </div>
       )}
 
@@ -669,6 +784,13 @@ export default function OrderFlow({
             transportCostAmount={previewProps.transportCostAmount}
             forceLight
           />
+        </div>
+      </div>
+
+      {/* Off-screen clean copy used only for the COGS analysis JPEG export. */}
+      <div style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }} aria-hidden>
+        <div style={{ width: 900 }}>
+          {orderType && <CogsAnalysisCard ref={cogsExportRef} analysis={cogsAnalysis} orderType={orderType} forceLight />}
         </div>
       </div>
     </div>

@@ -28,5 +28,7 @@ export function parseNewItemInput(body: Partial<NewItemInput>): NewItemInput | s
     largerPackGrammage: typeof body.largerPackGrammage === "number" ? body.largerPackGrammage : null,
     largerPackMrp: typeof body.largerPackMrp === "number" ? body.largerPackMrp : null,
     shelfLifeDays: typeof body.shelfLifeDays === "number" ? body.shelfLifeDays : null,
+    cogsCost: typeof body.cogsCost === "number" ? body.cogsCost : null,
+    largerPackCogsCost: typeof body.largerPackCogsCost === "number" ? body.largerPackCogsCost : null,
   };
 }

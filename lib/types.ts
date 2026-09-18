@@ -13,6 +13,9 @@ export type Item = {
   largerPackGrammage: number | null;
   largerPackMrp: number | null;
   shelfLifeDays: number | null;
+  /** Cost of goods sold per unit, for the internal COGS analysis card — not shown to clients. */
+  cogsCost: number | null;
+  largerPackCogsCost: number | null;
 };
 
 export type NewItemInput = Omit<Item, "id">;
