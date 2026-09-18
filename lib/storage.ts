@@ -42,6 +42,19 @@ async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
   }
 }
 
+// If Mongo is unreachable (outage, quota, network blip), reads fall back to the
+// committed local JSON instead of throwing — so the catalog/hamper config/settings
+// still load and rate cards can still be built and downloaded, even though the
+// fallback data is only as fresh as the last commit and writes still fail.
+async function readWithFallback<T>(dbRead: () => Promise<T>, fallback: () => Promise<T>, label: string): Promise<T> {
+  try {
+    return await dbRead();
+  } catch (err) {
+    console.error(`[storage] MongoDB unavailable for ${label}; serving local fallback data`, err);
+    return fallback();
+  }
+}
+
 async function writeJsonFile(file: string, data: unknown) {
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.writeFile(file, JSON.stringify(data, null, 2));
@@ -70,14 +83,26 @@ async function setConfigDoc(id: string, data: Record<string, unknown>): Promise<
 
 // ---------- Catalog ----------
 
+async function readLocalCatalog(): Promise<Item[]> {
+  const existing = await readJsonFile<Item[] | null>(LOCAL_CATALOG, null);
+  if (existing) return existing;
+  return readJsonFile<Item[]>(LOCAL_SEED, []);
+}
+
 export async function getCatalog(): Promise<Item[]> {
   if (isDbConfigured) {
-    const doc = await getConfigDoc<{ items: Item[] }>("catalog");
-    if (doc) return doc.items;
-    // Not seeded yet — bootstrap the database from the committed backup file.
-    const seed = (await readJsonFile<Item[] | null>(LOCAL_CATALOG, null)) ?? (await readJsonFile<Item[]>(LOCAL_SEED, []));
-    await saveCatalog(seed);
-    return seed;
+    return readWithFallback(
+      async () => {
+        const doc = await getConfigDoc<{ items: Item[] }>("catalog");
+        if (doc) return doc.items;
+        // Not seeded yet — bootstrap the database from the committed backup file.
+        const seed = await readLocalCatalog();
+        await saveCatalog(seed);
+        return seed;
+      },
+      readLocalCatalog,
+      "catalog"
+    );
   }
   const existing = await readJsonFile<Item[] | null>(LOCAL_CATALOG, null);
   if (existing) return existing;
@@ -149,17 +174,25 @@ function withHamperConfigDefaults(config: Partial<HamperConfig>): HamperConfig {
   };
 }
 
+async function readLocalHamperConfig(): Promise<HamperConfig> {
+  return withHamperConfigDefaults(await readJsonFile<Partial<HamperConfig>>(LOCAL_HAMPER_CONFIG, EMPTY_HAMPER_CONFIG));
+}
+
 export async function getHamperConfig(): Promise<HamperConfig> {
   if (isDbConfigured) {
-    const doc = await getConfigDoc<Partial<HamperConfig>>("hamper-config");
-    if (doc) return withHamperConfigDefaults(doc);
-    const seed = withHamperConfigDefaults(
-      await readJsonFile<Partial<HamperConfig>>(LOCAL_HAMPER_CONFIG, EMPTY_HAMPER_CONFIG)
+    return readWithFallback(
+      async () => {
+        const doc = await getConfigDoc<Partial<HamperConfig>>("hamper-config");
+        if (doc) return withHamperConfigDefaults(doc);
+        const seed = await readLocalHamperConfig();
+        await saveHamperConfig(seed);
+        return seed;
+      },
+      readLocalHamperConfig,
+      "hamper config"
     );
-    await saveHamperConfig(seed);
-    return seed;
   }
-  return withHamperConfigDefaults(await readJsonFile<Partial<HamperConfig>>(LOCAL_HAMPER_CONFIG, EMPTY_HAMPER_CONFIG));
+  return readLocalHamperConfig();
 }
 
 export async function saveHamperConfig(config: HamperConfig): Promise<void> {
@@ -250,17 +283,26 @@ export async function removeAddOn(id: string): Promise<void> {
 
 // ---------- Settings ----------
 
-export async function getSettings(): Promise<AppSettings> {
-  if (isDbConfigured) {
-    const doc = await getConfigDoc<Partial<AppSettings>>("settings");
-    if (doc) return { ...DEFAULT_SETTINGS, ...doc };
-    const existing = await readJsonFile<Partial<AppSettings> | null>(LOCAL_SETTINGS, null);
-    const seeded = { ...DEFAULT_SETTINGS, ...existing };
-    await saveSettings(seeded);
-    return seeded;
-  }
+async function readLocalSettings(): Promise<AppSettings> {
   const existing = await readJsonFile<Partial<AppSettings> | null>(LOCAL_SETTINGS, null);
   return { ...DEFAULT_SETTINGS, ...existing };
+}
+
+export async function getSettings(): Promise<AppSettings> {
+  if (isDbConfigured) {
+    return readWithFallback(
+      async () => {
+        const doc = await getConfigDoc<Partial<AppSettings>>("settings");
+        if (doc) return { ...DEFAULT_SETTINGS, ...doc };
+        const seeded = await readLocalSettings();
+        await saveSettings(seeded);
+        return seeded;
+      },
+      readLocalSettings,
+      "settings"
+    );
+  }
+  return readLocalSettings();
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
@@ -297,18 +339,28 @@ function ratecardsCollection() {
   return getDb().then((db) => db.collection<RateCardDoc>("ratecards"));
 }
 
-export async function listRateCards(): Promise<RateCardMeta[]> {
-  if (isDbConfigured) {
-    const collection = await ratecardsCollection();
-    const docs = await collection
-      .find({}, { projection: { imageBase64: 0, lineItems: 0, boxInstances: 0 } })
-      .toArray();
-    return docs
-      .map((d) => withMetaDefaults(d as unknown as RateCardMeta))
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
+async function readLocalRateCardIndex(): Promise<RateCardMeta[]> {
   const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
   return index.map(withMetaDefaults).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function listRateCards(): Promise<RateCardMeta[]> {
+  if (isDbConfigured) {
+    return readWithFallback(
+      async () => {
+        const collection = await ratecardsCollection();
+        const docs = await collection
+          .find({}, { projection: { imageBase64: 0, lineItems: 0, boxInstances: 0 } })
+          .toArray();
+        return docs
+          .map((d) => withMetaDefaults(d as unknown as RateCardMeta))
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      },
+      readLocalRateCardIndex,
+      "saved rate cards"
+    );
+  }
+  return readLocalRateCardIndex();
 }
 
 function computeTotals(snapshot: {
@@ -444,15 +496,22 @@ export async function deleteRateCard(id: string): Promise<void> {
   );
 }
 
+async function readLocalRateCard(id: string): Promise<RateCardSnapshot | null> {
+  return readJsonFile<RateCardSnapshot | null>(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), null);
+}
+
 export async function getRateCard(id: string): Promise<RateCardSnapshot | null> {
-  let snapshot: RateCardSnapshot | null;
-  if (isDbConfigured) {
-    const collection = await ratecardsCollection();
-    const doc = await collection.findOne({ _id: id }, { projection: { imageBase64: 0 } });
-    snapshot = doc ? (doc as unknown as RateCardSnapshot) : null;
-  } else {
-    snapshot = await readJsonFile<RateCardSnapshot | null>(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), null);
-  }
+  const snapshot: RateCardSnapshot | null = isDbConfigured
+    ? await readWithFallback(
+        async () => {
+          const collection = await ratecardsCollection();
+          const doc = await collection.findOne({ _id: id }, { projection: { imageBase64: 0 } });
+          return doc ? (doc as unknown as RateCardSnapshot) : null;
+        },
+        () => readLocalRateCard(id),
+        "rate card"
+      )
+    : await readLocalRateCard(id);
   if (!snapshot) return null;
   return {
     ...withMetaDefaults(snapshot),
@@ -467,15 +526,25 @@ export async function getRateCard(id: string): Promise<RateCardSnapshot | null> 
   };
 }
 
-export async function getRateCardImageBuffer(id: string): Promise<Buffer | null> {
-  if (isDbConfigured) {
-    const collection = await ratecardsCollection();
-    const doc = await collection.findOne({ _id: id }, { projection: { imageBase64: 1 } });
-    return doc?.imageBase64 ? Buffer.from(doc.imageBase64, "base64") : null;
-  }
+async function readLocalRateCardImage(id: string): Promise<Buffer | null> {
   try {
     return await fs.readFile(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`));
   } catch {
     return null;
   }
+}
+
+export async function getRateCardImageBuffer(id: string): Promise<Buffer | null> {
+  if (isDbConfigured) {
+    return readWithFallback(
+      async () => {
+        const collection = await ratecardsCollection();
+        const doc = await collection.findOne({ _id: id }, { projection: { imageBase64: 1 } });
+        return doc?.imageBase64 ? Buffer.from(doc.imageBase64, "base64") : null;
+      },
+      () => readLocalRateCardImage(id),
+      "rate card image"
+    );
+  }
+  return readLocalRateCardImage(id);
 }
