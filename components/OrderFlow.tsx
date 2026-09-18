@@ -338,6 +338,15 @@ export default function OrderFlow({
     return toJpeg(exportRef.current, { quality: 0.95, backgroundColor: "#ffffff", pixelRatio: 2 });
   }
 
+  // A separate, much smaller render used only for what gets persisted to MongoDB —
+  // rate card history doesn't need full download quality, and storing full-size images
+  // as base64 (33% larger than the binary) is the main thing that will eat into Atlas's
+  // free-tier 512MB storage cap over time. Downloaded files are unaffected.
+  async function renderStorageJpeg(): Promise<string> {
+    if (!exportRef.current) throw new Error("Preview not ready");
+    return toJpeg(exportRef.current, { quality: 0.7, backgroundColor: "#ffffff", pixelRatio: 1 });
+  }
+
   // Saves the rate card to the backend (used by every download path, not just JPEG) so
   // any download leaves a record in Saved Rate Cards. Requires a rendered JPEG because
   // the API stores it as the card's thumbnail regardless of which format is downloaded.
@@ -409,7 +418,8 @@ export default function OrderFlow({
       a.download = filename.replace(/\s+/g, "-").toLowerCase();
       a.click();
 
-      const saved = await trySaveRateCard(dataUrl);
+      const thumbnailUrl = await renderStorageJpeg();
+      const saved = await trySaveRateCard(thumbnailUrl);
       setMessage(saveResultMessage(saved));
       router.refresh();
     } catch {
@@ -424,7 +434,7 @@ export default function OrderFlow({
     setBusy(true);
     setMessage(null);
     try {
-      const dataUrl = await renderJpeg();
+      const dataUrl = await renderStorageJpeg();
       const csv = buildRateCardCsv({
         orderType,
         rows: isHamper ? [] : selectedRows,
@@ -449,7 +459,7 @@ export default function OrderFlow({
     setBusy(true);
     setMessage(null);
     try {
-      const dataUrl = await renderJpeg();
+      const dataUrl = await renderStorageJpeg();
       const buffer = await buildRateCardExcel({
         orderType,
         rows: isHamper ? [] : selectedRows,
