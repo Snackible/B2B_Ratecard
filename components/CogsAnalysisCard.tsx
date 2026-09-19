@@ -1,6 +1,7 @@
 import { Fragment, forwardRef } from "react";
 import type { OrderType } from "@/lib/types";
 import type { CogsAnalysis } from "@/lib/cogsAnalysis";
+import { LABOUR_COST_PERCENT } from "@/lib/cogsAnalysis";
 import { formatINR } from "@/lib/rows";
 
 type Props = {
@@ -28,7 +29,7 @@ const CogsAnalysisCard = forwardRef<HTMLDivElement, Props>(function CogsAnalysis
   const groupBg = forceLight ? "bg-gray-100" : "bg-[var(--input-bg)]";
 
   const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-  const colCount = isHamper ? 8 : 7;
+  const colCount = isHamper ? 9 : 8;
 
   let currentGroup: string | null | undefined;
 
@@ -53,6 +54,7 @@ const CogsAnalysisCard = forwardRef<HTMLDivElement, Props>(function CogsAnalysis
               <th className="py-2 pr-2 text-right font-medium">Qty</th>
               <th className="py-2 pr-2 text-right font-medium">Selling</th>
               <th className="py-2 pr-2 text-right font-medium">COGS</th>
+              <th className="py-2 pr-2 text-right font-medium">Labour ({LABOUR_COST_PERCENT}%)</th>
               <th className="py-2 pr-2 text-right font-medium">Margin</th>
               <th className="py-2 pr-2 text-right font-medium">Margin %</th>
               {!isHamper && <th className="py-2 pr-0 text-right font-medium">Pack</th>}
@@ -90,6 +92,7 @@ const CogsAnalysisCard = forwardRef<HTMLDivElement, Props>(function CogsAnalysis
                       <td className="py-1.5 pr-2 text-right">
                         {li.cogsTotal != null ? formatINR(li.cogsTotal) : <span className="text-amber-600">No cost data</span>}
                       </td>
+                      <td className="py-1.5 pr-2 text-right">{li.labourCost != null ? formatINR(li.labourCost) : "—"}</td>
                       <td className="py-1.5 pr-2 text-right">{li.marginTotal != null ? formatINR(li.marginTotal) : "—"}</td>
                       <td className="py-1.5 pr-2 text-right">
                         {li.marginPercent != null ? `${li.marginPercent.toFixed(1)}%` : "—"}
@@ -107,6 +110,7 @@ const CogsAnalysisCard = forwardRef<HTMLDivElement, Props>(function CogsAnalysis
       <div className={`mx-6 mb-6 rounded-lg ${footerBg} p-4 text-sm`}>
         <Row label="Costed selling total" value={formatINR(analysis.costedSellingTotal)} />
         <Row label="Costed COGS total" value={formatINR(analysis.costedCogsTotal)} />
+        <Row label={`Labour total (${LABOUR_COST_PERCENT}%)`} value={formatINR(analysis.costedLabourTotal)} />
         <Row label="Costed margin" value={formatINR(analysis.costedMarginTotal)} bold />
         <Row label="Blended margin %" value={`${analysis.costedMarginPercent.toFixed(1)}%`} bold />
         {analysis.uncostedItemCount > 0 && (

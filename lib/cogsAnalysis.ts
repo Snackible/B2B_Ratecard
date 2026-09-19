@@ -3,6 +3,11 @@ import type { HamperBoxInstance, Item, OrderType } from "./types";
 import type { SelectedRow } from "./rows";
 import { applyDiscount } from "./rows";
 
+// Labour isn't broken out anywhere in the COGS sheet — given directly as a flat 3% of
+// selling price, applied on top of ingredient COGS. Only applied where ingredient COGS
+// is known, so an uncosted item never shows a misleading partial cost.
+export const LABOUR_COST_PERCENT = 3;
+
 export type CogsLineItem = {
   itemId: string;
   groupLabel: string | null;
@@ -14,6 +19,7 @@ export type CogsLineItem = {
   sellingTotal: number;
   cogsPerUnit: number | null;
   cogsTotal: number | null;
+  labourCost: number | null;
   marginTotal: number | null;
   marginPercent: number | null;
 };
@@ -22,6 +28,7 @@ export type CogsAnalysis = {
   lineItems: CogsLineItem[];
   costedSellingTotal: number;
   costedCogsTotal: number;
+  costedLabourTotal: number;
   costedMarginTotal: number;
   costedMarginPercent: number;
   uncostedSellingTotal: number;
@@ -42,7 +49,8 @@ function buildLineItem(
 ): CogsLineItem {
   const sellingTotal = applyDiscount(mrp, discountPercent) * quantity;
   const cogsTotal = cogsPerUnit != null ? cogsPerUnit * quantity : null;
-  const marginTotal = cogsTotal != null ? sellingTotal - cogsTotal : null;
+  const labourCost = cogsTotal != null ? (sellingTotal * LABOUR_COST_PERCENT) / 100 : null;
+  const marginTotal = cogsTotal != null && labourCost != null ? sellingTotal - cogsTotal - labourCost : null;
   const marginPercent = marginTotal != null && sellingTotal > 0 ? (marginTotal / sellingTotal) * 100 : null;
   return {
     itemId,
@@ -55,6 +63,7 @@ function buildLineItem(
     sellingTotal,
     cogsPerUnit,
     cogsTotal,
+    labourCost,
     marginTotal,
     marginPercent,
   };
@@ -113,14 +122,16 @@ export function computeCogsAnalysis({
 
   let costedSellingTotal = 0;
   let costedCogsTotal = 0;
+  let costedLabourTotal = 0;
   let uncostedSellingTotal = 0;
   let costedItemCount = 0;
   let uncostedItemCount = 0;
 
   for (const li of lineItems) {
-    if (li.cogsTotal != null) {
+    if (li.cogsTotal != null && li.labourCost != null) {
       costedSellingTotal += li.sellingTotal;
       costedCogsTotal += li.cogsTotal;
+      costedLabourTotal += li.labourCost;
       costedItemCount++;
     } else {
       uncostedSellingTotal += li.sellingTotal;
@@ -128,13 +139,14 @@ export function computeCogsAnalysis({
     }
   }
 
-  const costedMarginTotal = costedSellingTotal - costedCogsTotal;
+  const costedMarginTotal = costedSellingTotal - costedCogsTotal - costedLabourTotal;
   const costedMarginPercent = costedSellingTotal > 0 ? (costedMarginTotal / costedSellingTotal) * 100 : 0;
 
   return {
     lineItems,
     costedSellingTotal,
     costedCogsTotal,
+    costedLabourTotal,
     costedMarginTotal,
     costedMarginPercent,
     uncostedSellingTotal,
@@ -155,8 +167,8 @@ function toCsv(rows: (string | number)[][]): string {
 export function buildCogsAnalysisCsv(analysis: CogsAnalysis, isHamper: boolean): string {
   const out: (string | number)[][] = [];
   const header = isHamper
-    ? ["Box", "Category", "Product Name", "Qty", "Selling Price (post-discount)", "COGS/unit", "COGS Total", "Margin", "Margin %"]
-    : ["Category", "Product Name", "Pack", "Qty", "Selling Price (post-discount)", "COGS/unit", "COGS Total", "Margin", "Margin %"];
+    ? ["Box", "Category", "Product Name", "Qty", "Selling Price (post-discount)", "COGS/unit", "COGS Total", `Labour (${LABOUR_COST_PERCENT}%)`, "Margin", "Margin %"]
+    : ["Category", "Product Name", "Pack", "Qty", "Selling Price (post-discount)", "COGS/unit", "COGS Total", `Labour (${LABOUR_COST_PERCENT}%)`, "Margin", "Margin %"];
   out.push(header);
 
   for (const li of analysis.lineItems) {
@@ -166,6 +178,7 @@ export function buildCogsAnalysisCsv(analysis: CogsAnalysis, isHamper: boolean):
     row.push(
       li.cogsPerUnit != null ? li.cogsPerUnit.toFixed(2) : "No cost data",
       li.cogsTotal != null ? li.cogsTotal.toFixed(2) : "",
+      li.labourCost != null ? li.labourCost.toFixed(2) : "",
       li.marginTotal != null ? li.marginTotal.toFixed(2) : "",
       li.marginPercent != null ? `${li.marginPercent.toFixed(1)}%` : ""
     );
@@ -175,6 +188,7 @@ export function buildCogsAnalysisCsv(analysis: CogsAnalysis, isHamper: boolean):
   out.push([]);
   out.push(["Costed selling total", analysis.costedSellingTotal.toFixed(2)]);
   out.push(["Costed COGS total", analysis.costedCogsTotal.toFixed(2)]);
+  out.push([`Labour total (${LABOUR_COST_PERCENT}%)`, analysis.costedLabourTotal.toFixed(2)]);
   out.push(["Costed margin", analysis.costedMarginTotal.toFixed(2)]);
   out.push(["Blended margin %", `${analysis.costedMarginPercent.toFixed(1)}%`]);
   if (analysis.uncostedItemCount > 0) {
@@ -195,8 +209,8 @@ export async function buildCogsAnalysisExcel(analysis: CogsAnalysis, isHamper: b
   const sheet = workbook.addWorksheet("COGS Analysis");
 
   const columns = isHamper
-    ? ["Box", "Category", "Product Name", "Qty", "Selling (post-discount)", "COGS/unit", "COGS Total", "Margin", "Margin %"]
-    : ["Category", "Product Name", "Pack", "Qty", "Selling (post-discount)", "COGS/unit", "COGS Total", "Margin", "Margin %"];
+    ? ["Box", "Category", "Product Name", "Qty", "Selling (post-discount)", "COGS/unit", "COGS Total", `Labour (${LABOUR_COST_PERCENT}%)`, "Margin", "Margin %"]
+    : ["Category", "Product Name", "Pack", "Qty", "Selling (post-discount)", "COGS/unit", "COGS Total", `Labour (${LABOUR_COST_PERCENT}%)`, "Margin", "Margin %"];
   const colCount = columns.length;
 
   sheet.mergeCells(1, 1, 1, colCount);
@@ -222,6 +236,7 @@ export async function buildCogsAnalysisExcel(analysis: CogsAnalysis, isHamper: b
     rowValues.push(
       li.cogsPerUnit ?? ("No cost data" as unknown as number),
       li.cogsTotal ?? "",
+      li.labourCost ?? "",
       li.marginTotal ?? "",
       li.marginPercent != null ? `${li.marginPercent.toFixed(1)}%` : ""
     );
@@ -250,6 +265,7 @@ export async function buildCogsAnalysisExcel(analysis: CogsAnalysis, isHamper: b
   }
   addFooterRow("Costed selling total", analysis.costedSellingTotal.toFixed(2));
   addFooterRow("Costed COGS total", analysis.costedCogsTotal.toFixed(2));
+  addFooterRow(`Labour total (${LABOUR_COST_PERCENT}%)`, analysis.costedLabourTotal.toFixed(2));
   addFooterRow("Costed margin", analysis.costedMarginTotal.toFixed(2));
   addFooterRow("Blended margin %", `${analysis.costedMarginPercent.toFixed(1)}%`);
   if (analysis.uncostedItemCount > 0) {
@@ -264,9 +280,10 @@ export async function buildCogsAnalysisExcel(analysis: CogsAnalysis, isHamper: b
   sheet.getColumn(6).width = 12;
   sheet.getColumn(7).width = 12;
   sheet.getColumn(8).width = 12;
-  sheet.getColumn(9).width = 10;
+  sheet.getColumn(9).width = 12;
+  sheet.getColumn(10).width = 10;
 
-  for (const col of [5, 7, 8]) {
+  for (const col of [5, 7, 8, 9]) {
     sheet.getColumn(col).numFmt = '"₹"#,##0.00';
   }
 
