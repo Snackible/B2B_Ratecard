@@ -1,28 +1,46 @@
 import { NextResponse } from "next/server";
-import fs from "node:fs/promises";
-import path from "node:path";
 import { getCatalog, saveCatalog } from "@/lib/storage";
-import type { Item } from "@/lib/types";
+import { matchSheetRowsToCatalog, type SheetCogsRow } from "@/lib/cogsSheetSync";
 
-// One-time (re-runnable) maintenance route: the live catalog moved to MongoDB before
-// cogsCost/largerPackCogsCost existed, so those two fields need to be patched into the
-// already-seeded Mongo document from the committed data/catalog.json. Merges by item id
-// and touches only these two fields — anything added directly to the live catalog since
-// the Mongo migration (not present in the local file) is left completely untouched.
-export async function POST() {
-  const localPath = path.join(process.cwd(), "data", "catalog.json");
-  const localItems = JSON.parse(await fs.readFile(localPath, "utf-8")) as Item[];
-  const costById = new Map(localItems.map((i) => [i.id, { cogsCost: i.cogsCost, largerPackCogsCost: i.largerPackCogsCost }]));
+// Called by the COGS master sheet's Apps Script (daily trigger + on-edit trigger) to keep
+// the live catalog's cogsCost/largerPackCogsCost in sync with the sheet. Requires a shared
+// secret since this is reachable from the open internet on a schedule — see COGS_SYNC_SECRET.
+export async function POST(req: Request) {
+  const secret = process.env.COGS_SYNC_SECRET;
+  if (!secret) {
+    return NextResponse.json({ error: "COGS_SYNC_SECRET is not configured on the server" }, { status: 500 });
+  }
+  if (req.headers.get("x-sync-secret") !== secret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const liveItems = await getCatalog();
-  let updated = 0;
-  const merged = liveItems.map((item) => {
-    const cost = costById.get(item.id);
-    if (!cost) return item;
-    updated++;
-    return { ...item, cogsCost: cost.cogsCost, largerPackCogsCost: cost.largerPackCogsCost };
+  const body = (await req.json()) as { rows?: unknown };
+  if (!Array.isArray(body.rows)) {
+    return NextResponse.json({ error: "Expected { rows: [{ name, mrp, cogsCost }] }" }, { status: 400 });
+  }
+  const rows: SheetCogsRow[] = body.rows.filter(
+    (r): r is SheetCogsRow =>
+      typeof r === "object" &&
+      r !== null &&
+      typeof (r as SheetCogsRow).name === "string" &&
+      typeof (r as SheetCogsRow).mrp === "number" &&
+      typeof (r as SheetCogsRow).cogsCost === "number"
+  );
+
+  const catalog = await getCatalog();
+  const { updates, matchedCount, unmatchedCatalogItems } = matchSheetRowsToCatalog(rows, catalog);
+
+  const merged = catalog.map((item) => {
+    const update = updates.get(item.id);
+    if (!update) return item;
+    return { ...item, cogsCost: update.cogsCost, largerPackCogsCost: update.largerPackCogsCost };
   });
-
   await saveCatalog(merged);
-  return NextResponse.json({ ok: true, totalItems: merged.length, updated });
+
+  return NextResponse.json({
+    ok: true,
+    rowsReceived: rows.length,
+    matchedCount,
+    unmatchedCatalogItems,
+  });
 }
