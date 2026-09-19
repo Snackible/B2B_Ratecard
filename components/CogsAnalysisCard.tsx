@@ -12,8 +12,8 @@ type Props = {
 };
 
 // Deliberately styled distinctly from RateCardPreview (no Snackible branding, a dark-red
-// "Internal Only" banner instead of the client-facing green) so it's never mistaken for
-// something that goes to a client, and never shares its save/export pipeline.
+// banner instead of the client-facing green) so it's never mistaken for something that
+// goes to a client, and never shares its save/export pipeline.
 const CogsAnalysisCard = forwardRef<HTMLDivElement, Props>(function CogsAnalysisCard(
   { analysis, orderType, forceLight },
   ref
@@ -36,8 +36,7 @@ const CogsAnalysisCard = forwardRef<HTMLDivElement, Props>(function CogsAnalysis
   return (
     <div ref={ref} className={`w-full ${cardBg} ${cardText}`} style={{ colorScheme: forceLight ? "light" : undefined }}>
       <div className="bg-[#7a1f1f] px-6 py-4 text-white">
-        <div className="text-xl font-bold tracking-wide">COGS Analysis — Internal Only</div>
-        <div className="text-xs opacity-80">Not for client distribution</div>
+        <div className="text-xl font-bold tracking-wide">COGS Analysis</div>
       </div>
 
       <div className={`flex items-center justify-between px-6 py-3 text-sm ${metaText}`}>

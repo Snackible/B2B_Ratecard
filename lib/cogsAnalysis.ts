@@ -215,7 +215,7 @@ export async function buildCogsAnalysisExcel(analysis: CogsAnalysis, isHamper: b
 
   sheet.mergeCells(1, 1, 1, colCount);
   const titleCell = sheet.getCell(1, 1);
-  titleCell.value = "COGS Analysis — Internal Only";
+  titleCell.value = "COGS Analysis";
   titleCell.font = { bold: true, size: 14, color: { argb: WHITE } };
   titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF7A1F1F" } };
   titleCell.alignment = { vertical: "middle" };
