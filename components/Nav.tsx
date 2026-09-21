@@ -1,5 +1,27 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+
+  return (
+    <Link
+      href={href}
+      aria-current={isActive ? "page" : undefined}
+      className={`rounded-md px-3 py-1.5 transition-colors ${
+        isActive
+          ? "bg-[var(--accent-soft-bg)] text-[var(--accent-soft-fg)]"
+          : "hover:bg-[var(--input-bg)] hover:text-[var(--text-primary)]"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export default function Nav() {
   return (
@@ -11,18 +33,8 @@ export default function Nav() {
           <span className="text-sm font-normal text-[var(--text-muted)]">Rate Card</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-x-1 gap-y-2 text-sm font-medium text-[var(--text-secondary)]">
-          <Link
-            href="/"
-            className="rounded-md px-3 py-1.5 hover:bg-[var(--input-bg)] hover:text-[var(--text-primary)]"
-          >
-            Create Rate Card
-          </Link>
-          <Link
-            href="/saved"
-            className="rounded-md px-3 py-1.5 hover:bg-[var(--input-bg)] hover:text-[var(--text-primary)]"
-          >
-            Saved Rate Cards
-          </Link>
+          <NavLink href="/">Create Rate Card</NavLink>
+          <NavLink href="/saved">Saved Rate Cards</NavLink>
           <div className="ml-2 border-l border-[var(--panel-border)] pl-2">
             <ThemeToggle />
           </div>

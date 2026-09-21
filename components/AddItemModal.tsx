@@ -77,8 +77,8 @@ export default function AddItemModal({ onClose, onSubmit, existingCategories, ex
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-xl">
+    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
+      <div className="animate-modal-in max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
             {isEditing ? "Edit Item" : "Add New Item"}
@@ -256,7 +256,7 @@ export default function AddItemModal({ onClose, onSubmit, existingCategories, ex
             </Field>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-2">
             <button

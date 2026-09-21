@@ -230,8 +230,8 @@ export default function BoxManagerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] shadow-xl">
+    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
+      <div className="animate-modal-in flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--panel-border)] px-6 py-4">
           <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
             {boxForm ? (boxForm.id ? "Edit Box" : "New Box") : "Manage Items"}
@@ -246,7 +246,7 @@ export default function BoxManagerModal({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-          {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+          {error && <p className="mb-3 text-sm text-[var(--danger)]">{error}</p>}
 
           {!boxForm ? (
             <div className="space-y-5">

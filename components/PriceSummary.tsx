@@ -68,7 +68,7 @@ export default function PriceSummary({
                 <table className="w-full text-sm">
                   <tbody className="divide-y divide-[var(--panel-border)]">
                     {box.lineItems.map((li) => (
-                      <tr key={li.itemId}>
+                      <tr key={li.itemId} className="hover:bg-[var(--input-bg)]">
                         <td className="py-1 pr-2 text-[var(--text-secondary)]">{li.name}</td>
                         <td className="py-1 px-2 text-right tabular-nums text-[var(--text-muted)]">
                           {formatINR(li.mrp)}
@@ -177,7 +177,7 @@ export default function PriceSummary({
           <table className="w-full text-sm">
             <tbody className="divide-y divide-[var(--panel-border)]">
               {rows.map((row) => (
-                <tr key={row.key}>
+                <tr key={row.key} className="hover:bg-[var(--input-bg)]">
                   <td className="py-2 pr-2 pl-4 text-[var(--text-secondary)]">{row.name}</td>
                   <td className="py-2 px-2 text-right tabular-nums text-[var(--text-muted)]">
                     {formatINR(row.mrp)}

@@ -35,7 +35,7 @@ const CogsAnalysisCard = forwardRef<HTMLDivElement, Props>(function CogsAnalysis
 
   return (
     <div ref={ref} className={`w-full ${cardBg} ${cardText}`} style={{ colorScheme: forceLight ? "light" : undefined }}>
-      <div className="bg-[#7a1f1f] px-6 py-4 text-white">
+      <div className="bg-gradient-to-b from-[#8a2424] to-[#6e1c1c] px-6 py-4 text-white">
         <div className="text-xl font-bold tracking-wide">COGS Analysis</div>
       </div>
 
