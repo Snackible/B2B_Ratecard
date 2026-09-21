@@ -20,6 +20,7 @@
   --accent-fg: #ffffff;
   --accent-soft-bg: #eaf5ec;
   --accent-soft-fg: #1f6b3a;
+  --accent-shadow: rgb(31 107 58 / 0.22);
 
   --secondary-accent: #e8571c;
   --secondary-accent-hover: #b5541a;
@@ -47,6 +48,7 @@
   --accent-fg: #0f1113;
   --accent-soft-bg: #1b2e22;
   --accent-soft-fg: #7fd99a;
+  --accent-shadow: rgb(63 174 95 / 0.28);
 
   --secondary-accent: #3fae5f;
   --secondary-accent-hover: #35934f;

@@ -4,15 +4,12 @@ import type { OrderType } from "@/lib/types";
 
 export default function OrderTypeSelect({ onSelect }: { onSelect: (type: OrderType) => void }) {
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center px-4 py-16 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-        What are you building?
-      </h1>
-      <p className="mt-2 text-sm text-[var(--text-muted)]">
+    <div className="mx-auto flex min-h-[60vh] max-w-4xl flex-col items-center justify-center px-4 py-16 text-center">
+      <h1 className="text-3xl font-semibold tracking-tight text-balance text-[var(--text-primary)] sm:text-4xl">
         Choose an order type to start pricing.
-      </p>
+      </h1>
 
-      <div className="mt-10 grid w-full grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="mt-12 grid w-full grid-cols-1 gap-6 sm:grid-cols-2">
         <OptionCard
           title="Bulk Order"
           description="Flat catalog priced by segment — Standard Grammage, One Serving Pack, Large Grammage."
@@ -52,17 +49,18 @@ function OptionCard({
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col items-start gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 text-left shadow-sm hover:border-[var(--accent)] hover:shadow-md active:scale-[0.99]"
+      className="group relative flex flex-col items-start gap-4 overflow-hidden rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-9 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[0_20px_40px_-15px_var(--accent-shadow)] active:translate-y-0 active:scale-[0.99]"
     >
-      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-soft-bg)] text-[var(--accent-soft-fg)] group-hover:bg-[var(--accent)] group-hover:text-[var(--accent-fg)]">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-soft-bg)] text-[var(--accent-soft-fg)] transition-colors duration-300 group-hover:bg-[var(--accent)] group-hover:text-[var(--accent-fg)]">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           {icon}
         </svg>
       </div>
-      <div className="text-base font-semibold tracking-tight text-[var(--text-primary)]">{title}</div>
-      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
-      <span className="mt-1 text-xs font-medium text-[var(--accent)] opacity-0 group-hover:opacity-100">
-        Get started &rarr;
+      <div className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">{title}</div>
+      <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{description}</p>
+      <span className="mt-2 flex items-center gap-1 text-sm font-medium text-[var(--accent)] opacity-0 transition-all duration-300 group-hover:translate-x-0.5 group-hover:opacity-100">
+        Get started
+        <span aria-hidden>&rarr;</span>
       </span>
     </button>
   );
