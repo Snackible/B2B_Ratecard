@@ -161,7 +161,14 @@ function Row({
           readOnly
           className="h-4 w-4 shrink-0 accent-[var(--accent)]"
         />
-        <span className="min-w-0 flex-1 truncate">{row.name}</span>
+        <span className="min-w-0 flex-1 truncate">
+          {row.name}
+          {!row.hasCogsData && (
+            <span title="COGS data unavailable" className="ml-1 text-[var(--text-faint)]">
+              ★
+            </span>
+          )}
+        </span>
         <span className="shrink-0 text-xs text-[var(--text-faint)]">({row.packLabel})</span>
         <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">{formatINR(row.mrp)}</span>
       </div>

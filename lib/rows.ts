@@ -11,6 +11,7 @@ export type CatalogRow = {
   grammage: number | null;
   shelfLifeDays: number | null;
   mrp: number;
+  hasCogsData: boolean;
 };
 
 export type SelectedRow = CatalogRow & { quantity: number };
@@ -41,6 +42,7 @@ export function buildRows(items: Item[]): CatalogRow[] {
       grammage: item.grammage,
       shelfLifeDays: item.shelfLifeDays,
       mrp: item.mrp,
+      hasCogsData: item.cogsCost != null,
     });
     if (item.largerPackMrp != null && item.largerPackGrammage != null) {
       rows.push({
@@ -54,6 +56,7 @@ export function buildRows(items: Item[]): CatalogRow[] {
         grammage: item.largerPackGrammage,
         shelfLifeDays: item.shelfLifeDays,
         mrp: item.largerPackMrp,
+        hasCogsData: item.largerPackCogsCost != null,
       });
     }
   }

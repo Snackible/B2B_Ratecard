@@ -287,7 +287,14 @@ export default function HamperBuilder({
                                   readOnly
                                   className="h-4 w-4 shrink-0 accent-[var(--accent)]"
                                 />
-                                <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{item.name}</span>
+                                <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">
+                                  {item.name}
+                                  {item.cogsCost == null && (
+                                    <span title="COGS data unavailable" className="ml-1 text-[var(--text-faint)]">
+                                      ★
+                                    </span>
+                                  )}
+                                </span>
                                 <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">
                                   {formatINR(item.mrp)}
                                 </span>
