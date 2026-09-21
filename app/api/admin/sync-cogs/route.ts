@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCatalog, saveCatalog } from "@/lib/storage";
-import { matchSheetRowsToCatalog, type SheetCogsRow } from "@/lib/cogsSheetSync";
+import { getCatalog, saveCatalog, addItems } from "@/lib/storage";
+import { matchSheetRowsToCatalog, buildNewItemsFromCandidates, type SheetCogsRow } from "@/lib/cogsSheetSync";
 
 // Called by the COGS master sheet's Apps Script (daily trigger + on-edit trigger) to keep
 // the live catalog's cogsCost/largerPackCogsCost in sync with the sheet. Requires a shared
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   );
 
   const catalog = await getCatalog();
-  const { updates, matchedCount, unmatchedCatalogItems } = matchSheetRowsToCatalog(rows, catalog);
+  const { updates, matchedCount, unmatchedCatalogItems, newItemCandidates } = matchSheetRowsToCatalog(rows, catalog);
 
   const merged = catalog.map((item) => {
     const update = updates.get(item.id);
@@ -37,10 +37,16 @@ export async function POST(req: Request) {
   });
   await saveCatalog(merged);
 
+  // Sheet product families with no matching catalog item (by name or alias) get created
+  // outright — "Uncategorized" and editable afterward like any manually-added item.
+  const newItemInputs = buildNewItemsFromCandidates(newItemCandidates);
+  const createdItems = newItemInputs.length > 0 ? await addItems(newItemInputs) : [];
+
   return NextResponse.json({
     ok: true,
     rowsReceived: rows.length,
     matchedCount,
     unmatchedCatalogItems,
+    createdItems: createdItems.map((i) => i.name),
   });
 }

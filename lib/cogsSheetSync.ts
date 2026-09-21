@@ -1,4 +1,4 @@
-import type { Item } from "./types";
+import type { Item, NewItemInput } from "./types";
 
 // The COGS master sheet and the app catalog are maintained independently and don't use
 // the same product names (different word order, spelling, or qualifiers) — e.g. the sheet
@@ -45,6 +45,8 @@ export const COGS_SHEET_NAME_ALIASES: Record<string, string | string[]> = {
   "Pistachio Spread": "Pstachio Spread",
   "Chocolate Spread": "Chocolatey Spread",
   "Jowar Bhakarwadi": "Bhakarwadi",
+  "Achari Masala Ragi Sticks": "Ragi sticks Achari Masala Flavour",
+  "Spicy Garlic Ragi Sticks": "Ragi sticks Spicy Garlic Flavour",
 };
 
 export type SheetCogsRow = { name: string; mrp: number; cogsCost: number };
@@ -97,15 +99,20 @@ function resolvePair(
   return { base: baseRow?.cogsCost ?? null, large: largeRow?.cogsCost ?? null };
 }
 
+export type NewItemCandidate = { displayName: string; rows: SheetCogsRow[] };
+
 export type CogsSyncResult = {
   updates: Map<string, { cogsCost: number | null; largerPackCogsCost: number | null }>;
   matchedCount: number;
   unmatchedCatalogItems: string[];
+  newItemCandidates: NewItemCandidate[];
 };
 
 // Matches incoming sheet rows (Product Name, FG MRP, Total COGS — the same three columns
 // the sheet has always had) against the live "Standard Grammage" catalog items, via the
-// alias table above plus a price-based tiebreak between a product's pack sizes.
+// alias table above plus a price-based tiebreak between a product's pack sizes. Sheet
+// product families that don't correspond to any existing catalog item (by name or alias)
+// come back as newItemCandidates — see buildNewItemsFromCandidates.
 export function matchSheetRowsToCatalog(sheetRows: SheetCogsRow[], catalogItems: Item[]): CogsSyncResult {
   const byNormalizedName = new Map<string, SheetCogsRow[]>();
   for (const row of sheetRows) {
@@ -116,10 +123,13 @@ export function matchSheetRowsToCatalog(sheetRows: SheetCogsRow[], catalogItems:
 
   const updates = new Map<string, { cogsCost: number | null; largerPackCogsCost: number | null }>();
   const unmatchedCatalogItems: string[] = [];
+  const claimedNames = new Set<string>();
 
   for (const item of catalogItems) {
     if (item.segment !== "Standard Grammage") continue;
-    const candidates = candidateNamesFor(item.name).flatMap((n) => byNormalizedName.get(n) ?? []);
+    const names = candidateNamesFor(item.name);
+    for (const n of names) claimedNames.add(n);
+    const candidates = names.flatMap((n) => byNormalizedName.get(n) ?? []);
     if (candidates.length === 0) {
       unmatchedCatalogItems.push(item.name);
       continue;
@@ -132,5 +142,52 @@ export function matchSheetRowsToCatalog(sheetRows: SheetCogsRow[], catalogItems:
     updates.set(item.id, { cogsCost: base, largerPackCogsCost: item.largerPackMrp != null ? large : null });
   }
 
-  return { updates, matchedCount: updates.size, unmatchedCatalogItems };
+  const newItemCandidates: NewItemCandidate[] = [];
+  for (const [key, rows] of byNormalizedName) {
+    if (claimedNames.has(key)) continue;
+    newItemCandidates.push({ displayName: cleanDisplayName(rows[0].name), rows });
+  }
+
+  return { updates, matchedCount: updates.size, unmatchedCatalogItems, newItemCandidates };
+}
+
+// Presentable version of a sheet row's raw name for a new catalog item: strips the
+// trailing pack-size annotation the sheet bakes into the name (e.g. "- 75gm"), which the
+// app keeps as a separate grammage field instead.
+function cleanDisplayName(raw: string): string {
+  return raw
+    .replace(/\(.*?\)/g, "")
+    .replace(/[-–]?\s*\d+\s*gm?\b\.?/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function parseGrammage(raw: string): number | null {
+  const match = raw.match(/(\d+)\s*gm?\b/i);
+  return match ? Number(match[1]) : null;
+}
+
+// New catalog items get placed in "Standard Grammage" / "Uncategorized" (the sheet has no
+// category of its own) — both are editable afterward through the normal catalog admin UI,
+// same as any manually-added item. Two sheet rows for one product (by lowest/highest price)
+// become the base pack + larger pack on a single item, matching how every other item works.
+export function buildNewItemsFromCandidates(candidates: NewItemCandidate[]): NewItemInput[] {
+  return candidates.map(({ displayName, rows }) => {
+    const sorted = [...rows].sort((a, b) => a.mrp - b.mrp);
+    const base = sorted[0];
+    const large = sorted.length > 1 ? sorted[sorted.length - 1] : null;
+    return {
+      name: displayName || base.name,
+      category: "Uncategorized",
+      section: null,
+      segment: "Standard Grammage",
+      grammage: parseGrammage(base.name),
+      mrp: base.mrp,
+      largerPackGrammage: large ? parseGrammage(large.name) : null,
+      largerPackMrp: large ? large.mrp : null,
+      shelfLifeDays: null,
+      cogsCost: base.cogsCost,
+      largerPackCogsCost: large ? large.cogsCost : null,
+    };
+  });
 }
