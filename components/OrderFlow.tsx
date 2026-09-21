@@ -639,7 +639,7 @@ export default function OrderFlow({
                   setOrderType(null);
                   setStep("select");
                 }}
-                className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--accent)]"
+                className="-mx-2.5 -my-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--input-bg)] hover:text-[var(--accent)]"
               >
                 &larr; Choose a different order type
               </button>
