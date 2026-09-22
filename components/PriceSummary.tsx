@@ -49,7 +49,7 @@ export default function PriceSummary({
   const [addToBoxSearch, setAddToBoxSearch] = useState("");
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] shadow-sm">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] shadow-sm">
       {hasBoxes ? (
         <div className="divide-y divide-[var(--panel-border)]">
           {boxInstances!.map((box) => (
@@ -65,53 +65,56 @@ export default function PriceSummary({
                 </span>
               </div>
               {box.lineItems.length > 0 ? (
-                <table className="w-full text-sm">
-                  <tbody className="divide-y divide-[var(--panel-border)]">
-                    {box.lineItems.map((li) => (
-                      <tr key={li.itemId} className="hover:bg-[var(--input-bg)]">
-                        <td className="py-1 pr-2 text-[var(--text-secondary)]">{li.name}</td>
-                        <td className="py-1 px-2 text-right tabular-nums text-[var(--text-muted)]">
+                <div className="divide-y divide-[var(--panel-border)] text-sm">
+                  {box.lineItems.map((li) => (
+                    <div
+                      key={li.itemId}
+                      className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1 hover:bg-[var(--input-bg)]"
+                    >
+                      <span className="min-w-0 flex-1 basis-full truncate pr-2 text-[var(--text-secondary)] sm:basis-auto">
+                        {li.name}
+                      </span>
+                      <div className="ml-auto flex shrink-0 items-center gap-2">
+                        <span className="tabular-nums whitespace-nowrap text-[var(--text-muted)]">
                           {formatINR(li.mrp)}
-                        </td>
-                        <td className="py-1 px-2 text-right">
-                          {onLineItemQuantityChange ? (
-                            <input
-                              type="number"
-                              min={1}
-                              value={li.quantity}
-                              onChange={(e) =>
-                                onLineItemQuantityChange(
-                                  box.key,
-                                  li.itemId,
-                                  Math.max(1, Number(e.target.value) || 1)
-                                )
-                              }
-                              className="w-14 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs tabular-nums text-[var(--text-primary)]"
-                            />
-                          ) : (
-                            <span className="tabular-nums text-[var(--text-muted)]">×{li.quantity}</span>
-                          )}
-                        </td>
-                        <td className="py-1 pl-2 text-right tabular-nums font-medium text-[var(--text-primary)]">
-                          {formatINR(li.mrp * li.quantity)}
-                        </td>
-                        {onLineItemRemove && (
-                          <td className="py-1 pl-2 text-right">
-                            <button
-                              type="button"
-                              onClick={() => onLineItemRemove(box.key, li.itemId)}
-                              title="Remove from box"
-                              aria-label={`Remove ${li.name} from ${box.boxName}`}
-                              className="text-[var(--text-faint)] hover:text-red-500"
-                            >
-                              ✕
-                            </button>
-                          </td>
+                        </span>
+                        {onLineItemQuantityChange ? (
+                          <input
+                            type="number"
+                            min={1}
+                            value={li.quantity}
+                            onChange={(e) =>
+                              onLineItemQuantityChange(
+                                box.key,
+                                li.itemId,
+                                Math.max(1, Number(e.target.value) || 1)
+                              )
+                            }
+                            className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs tabular-nums text-[var(--text-primary)]"
+                          />
+                        ) : (
+                          <span className="tabular-nums whitespace-nowrap text-[var(--text-muted)]">
+                            ×{li.quantity}
+                          </span>
                         )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        <span className="tabular-nums whitespace-nowrap font-medium text-[var(--text-primary)]">
+                          {formatINR(li.mrp * li.quantity)}
+                        </span>
+                        {onLineItemRemove && (
+                          <button
+                            type="button"
+                            onClick={() => onLineItemRemove(box.key, li.itemId)}
+                            title="Remove from box"
+                            aria-label={`Remove ${li.name} from ${box.boxName}`}
+                            className="shrink-0 px-1 text-[var(--text-faint)] hover:text-red-500"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <p className="text-xs text-[var(--text-faint)] italic">No items in this box yet.</p>
               )}
@@ -174,47 +177,48 @@ export default function PriceSummary({
         </div>
       ) : (
         rows.length > 0 && (
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-[var(--panel-border)]">
-              {rows.map((row) => (
-                <tr key={row.key} className="hover:bg-[var(--input-bg)]">
-                  <td className="py-2 pr-2 pl-4 text-[var(--text-secondary)]">{row.name}</td>
-                  <td className="py-2 px-2 text-right tabular-nums text-[var(--text-muted)]">
+          <div className="divide-y divide-[var(--panel-border)] px-4 text-sm">
+            {rows.map((row) => (
+              <div
+                key={row.key}
+                className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 hover:bg-[var(--input-bg)]"
+              >
+                <span className="min-w-0 flex-1 basis-full truncate pr-2 text-[var(--text-secondary)] sm:basis-auto">
+                  {row.name}
+                </span>
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                  <span className="tabular-nums whitespace-nowrap text-[var(--text-muted)]">
                     {formatINR(row.mrp)}
-                  </td>
-                  <td className="py-2 px-2 text-right">
-                    {onQuantityChange ? (
-                      <input
-                        type="number"
-                        min={1}
-                        value={row.quantity}
-                        onChange={(e) => onQuantityChange(row.key, Math.max(1, Number(e.target.value) || 1))}
-                        className="w-14 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs tabular-nums text-[var(--text-primary)]"
-                      />
-                    ) : (
-                      <span className="tabular-nums text-[var(--text-muted)]">×{row.quantity}</span>
-                    )}
-                  </td>
-                  <td className="py-2 pr-4 pl-2 text-right tabular-nums font-medium text-[var(--text-primary)]">
-                    {formatINR(row.mrp * row.quantity)}
-                  </td>
-                  {onRemove && (
-                    <td className="py-2 pr-4 pl-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => onRemove(row.key)}
-                        title="Remove from rate card"
-                        aria-label={`Remove ${row.name} from rate card`}
-                        className="text-[var(--text-faint)] hover:text-red-500"
-                      >
-                        ✕
-                      </button>
-                    </td>
+                  </span>
+                  {onQuantityChange ? (
+                    <input
+                      type="number"
+                      min={1}
+                      value={row.quantity}
+                      onChange={(e) => onQuantityChange(row.key, Math.max(1, Number(e.target.value) || 1))}
+                      className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs tabular-nums text-[var(--text-primary)]"
+                    />
+                  ) : (
+                    <span className="tabular-nums whitespace-nowrap text-[var(--text-muted)]">×{row.quantity}</span>
                   )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  <span className="tabular-nums whitespace-nowrap font-medium text-[var(--text-primary)]">
+                    {formatINR(row.mrp * row.quantity)}
+                  </span>
+                  {onRemove && (
+                    <button
+                      type="button"
+                      onClick={() => onRemove(row.key)}
+                      title="Remove from rate card"
+                      aria-label={`Remove ${row.name} from rate card`}
+                      className="shrink-0 px-1 text-[var(--text-faint)] hover:text-red-500"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )
       )}
 

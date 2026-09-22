@@ -67,7 +67,7 @@ export default function SegmentList({
           className="w-full rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] py-2 pr-3 pl-8 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
         />
       </div>
-      <div className="flex-1 overflow-y-auto pr-1">
+      <div className="min-w-0 flex-1 overflow-y-auto pr-1">
         {filtered ? (
           <ul className="space-y-1">
             {filtered.length === 0 && <li className="text-sm text-[var(--text-faint)] italic">No matches</li>}
@@ -152,9 +152,9 @@ function Row({
   return (
     <li
       onClick={() => onToggle(row.key)}
-      className="group flex cursor-pointer items-center gap-1 rounded-md hover:bg-[var(--input-bg)]"
+      className="group flex min-w-0 cursor-pointer flex-col gap-1 rounded-md px-2 py-1.5 hover:bg-[var(--input-bg)] sm:flex-row sm:items-center sm:gap-1 sm:py-1.5"
     >
-      <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-sm text-[var(--text-primary)]">
+      <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-[var(--text-primary)]">
         <input
           type="checkbox"
           checked={checked}
@@ -169,43 +169,45 @@ function Row({
             </span>
           )}
         </span>
+      </div>
+      <div className="flex shrink-0 items-center gap-2 pl-6 sm:pl-0">
         <span className="shrink-0 text-xs text-[var(--text-faint)]">({row.packLabel})</span>
         <span className="tabular-nums shrink-0 text-xs text-[var(--text-muted)]">{formatINR(row.mrp)}</span>
+        {quantity !== undefined && (
+          <input
+            type="number"
+            min={1}
+            value={quantity}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => onQuantityChange(row.key, Math.max(1, Number(e.target.value) || 1))}
+            className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
+          />
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditItem(row.itemId);
+          }}
+          title="Edit item"
+          aria-label={`Edit ${row.name}`}
+          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-faint)] hover:text-[var(--accent)] sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+        >
+          ✎
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete();
+          }}
+          title="Delete from catalog"
+          aria-label={`Delete ${row.name} from catalog`}
+          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-faint)] hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+        >
+          ✕
+        </button>
       </div>
-      {quantity !== undefined && (
-        <input
-          type="number"
-          min={1}
-          value={quantity}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => onQuantityChange(row.key, Math.max(1, Number(e.target.value) || 1))}
-          className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs text-[var(--text-primary)]"
-        />
-      )}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onEditItem(row.itemId);
-        }}
-        title="Edit item"
-        aria-label={`Edit ${row.name}`}
-        className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-faint)] opacity-0 group-hover:opacity-100 hover:text-[var(--accent)] focus-visible:opacity-100"
-      >
-        ✎
-      </button>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDelete();
-        }}
-        title="Delete from catalog"
-        aria-label={`Delete ${row.name} from catalog`}
-        className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-faint)] opacity-0 group-hover:opacity-100 hover:text-red-500 focus-visible:opacity-100"
-      >
-        ✕
-      </button>
     </li>
   );
 }

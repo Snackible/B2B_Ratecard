@@ -43,7 +43,7 @@ export default async function SavedRateCardsPage() {
                 key={card.id}
                 className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3.5 hover:bg-[var(--input-bg)]"
               >
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-medium text-[var(--text-primary)]">{displayName}</span>
                     <span className="shrink-0 rounded bg-[var(--input-bg)] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--text-muted)] uppercase">
@@ -69,7 +69,7 @@ export default async function SavedRateCardsPage() {
                     </span>
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-3 text-xs font-medium">
+                <div className="flex w-full shrink-0 items-center gap-3 text-xs font-medium sm:w-auto">
                   <DownloadRateCardButton imageUrl={card.imageUrl} filename={filename} />
                   <Link href={`/?edit=${card.id}`} className="text-[var(--text-secondary)] hover:text-[var(--accent)]">
                     Edit

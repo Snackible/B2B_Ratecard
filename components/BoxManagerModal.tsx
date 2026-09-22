@@ -250,13 +250,13 @@ export default function BoxManagerModal({
 
           {!boxForm ? (
             <div className="space-y-5">
-              <div className="flex items-center justify-between rounded-lg border border-[var(--panel-border)] p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--panel-border)] p-3">
                 <div className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">
                   Catalog Items <span className="font-normal text-[var(--text-faint)]">({items.length})</span>
                 </div>
                 <button
                   onClick={() => setShowAddItemModal(true)}
-                  className="rounded-md bg-[var(--secondary-accent)] px-2 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
+                  className="shrink-0 rounded-md bg-[var(--secondary-accent)] px-2 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
                 >
                   + Add Item
                 </button>
@@ -267,13 +267,13 @@ export default function BoxManagerModal({
               )}
 
               <div className="rounded-lg border border-dashed border-[var(--panel-border)] p-3">
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="text-sm font-semibold tracking-tight text-[var(--text-secondary)]">
                     Unassigned <span className="font-normal text-[var(--text-faint)]">(no box type yet)</span>
                   </div>
                   <button
                     onClick={() => startNewBox(null)}
-                    className="rounded-md bg-[var(--secondary-accent)] px-2 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
+                    className="shrink-0 rounded-md bg-[var(--secondary-accent)] px-2 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
                   >
                     + Add Box
                   </button>
@@ -288,7 +288,7 @@ export default function BoxManagerModal({
                       >
                         <button onClick={() => startEditBox(box)} className="min-w-0 flex-1 text-left">
                           <span className="font-medium text-[var(--text-primary)]">{box.name}</span>
-                          <span className="ml-2 text-xs text-[var(--text-muted)]">
+                          <span className="ml-2 block text-xs text-[var(--text-muted)] sm:inline">
                             {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
                             {(box.minItems !== null || box.maxItems !== null) && (
                               <>
@@ -316,9 +316,9 @@ export default function BoxManagerModal({
 
               {config.boxTypes.map((bt) => (
                 <div key={bt.id} className="rounded-lg border border-[var(--panel-border)] p-3">
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <div className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">{bt.name}</div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <button
                         onClick={() => startNewBox(bt.id)}
                         className="rounded-md bg-[var(--secondary-accent)] px-2 py-1 text-xs font-medium text-[var(--secondary-fg)] hover:bg-[var(--secondary-accent-hover)] active:scale-[0.97]"
@@ -343,7 +343,7 @@ export default function BoxManagerModal({
                         >
                           <button onClick={() => startEditBox(box)} className="min-w-0 flex-1 text-left">
                             <span className="font-medium text-[var(--text-primary)]">{box.name}</span>
-                            <span className="ml-2 text-xs text-[var(--text-muted)]">
+                            <span className="ml-2 block text-xs text-[var(--text-muted)] sm:inline">
                               {formatINR(box.cost)} box &middot; {formatINR(box.transportCost)} transport
                             {(box.minItems !== null || box.maxItems !== null) && (
                               <>
@@ -370,18 +370,18 @@ export default function BoxManagerModal({
                 </div>
               ))}
 
-              <div className="flex gap-2 border-t border-[var(--panel-border)] pt-4">
+              <div className="flex min-w-0 flex-wrap gap-2 border-t border-[var(--panel-border)] pt-4">
                 <input
                   type="text"
                   placeholder="New box type name (e.g. Festive Hampers)"
                   value={newTypeName}
                   onChange={(e) => setNewTypeName(e.target.value)}
-                  className="flex-1 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                  className="min-w-0 flex-1 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                 />
                 <button
                   onClick={addBoxType}
                   disabled={busy || !newTypeName.trim()}
-                  className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                  className="shrink-0 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
                 >
                   Add Type
                 </button>
@@ -417,13 +417,13 @@ export default function BoxManagerModal({
                     <li className="px-2 py-1 text-xs text-[var(--text-faint)] italic">No add-ons yet</li>
                   )}
                 </ul>
-                <div className="mt-3 flex gap-2 border-t border-[var(--panel-border)] pt-3">
+                <div className="mt-3 flex min-w-0 flex-wrap gap-2 border-t border-[var(--panel-border)] pt-3">
                   <input
                     type="text"
                     placeholder="Add-on name (e.g. Diya)"
                     value={newAddOnName}
                     onChange={(e) => setNewAddOnName(e.target.value)}
-                    className="flex-1 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    className="min-w-0 flex-1 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                   />
                   <input
                     type="number"
@@ -431,12 +431,12 @@ export default function BoxManagerModal({
                     placeholder="₹/unit"
                     value={newAddOnCost}
                     onChange={(e) => setNewAddOnCost(e.target.value)}
-                    className="w-24 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    className="w-24 shrink-0 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                   />
                   <button
                     onClick={addAddOnEntry}
                     disabled={busy || !newAddOnName.trim() || !newAddOnCost}
-                    className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                    className="shrink-0 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
                   >
                     Add Add-on
                   </button>

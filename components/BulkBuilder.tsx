@@ -82,9 +82,9 @@ export default function BulkBuilder({
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <div className="flex h-[55vh] flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
-        <div className="mb-3 flex shrink-0 items-center justify-between">
+    <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-4">
+      <div className="flex h-[60vh] min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm sm:h-[55vh]">
+        <div className="mb-3 flex min-w-0 shrink-0 items-center justify-between gap-2">
           <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">Catalog</h2>
           <button
             onClick={() => setModalItem("new")}
@@ -93,7 +93,7 @@ export default function BulkBuilder({
             + Add Item
           </button>
         </div>
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 min-w-0 flex-1">
           <SegmentList
             rows={rows}
             selectedKeys={selectedKeys}
@@ -121,14 +121,14 @@ export default function BulkBuilder({
         />
       )}
 
-      <div className="flex flex-wrap items-center gap-5 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm">
-        <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-sm sm:gap-5">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:min-w-0 sm:flex-initial">
           <input
             type="text"
             placeholder="Client name"
             value={clientName}
             onChange={(e) => onClientNameChange(e.target.value)}
-            className="w-44 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none"
+            className="w-full min-w-0 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none sm:w-44"
           />
           <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
             <input
@@ -141,9 +141,9 @@ export default function BulkBuilder({
           </label>
         </div>
 
-        <div className="h-8 w-px bg-[var(--panel-border)]" aria-hidden />
+        <div className="hidden h-8 w-px bg-[var(--panel-border)] sm:block" aria-hidden />
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
             <input
               type="checkbox"
@@ -168,12 +168,12 @@ export default function BulkBuilder({
           )}
         </div>
 
-        <div className="ml-auto">
+        <div className="w-full sm:ml-auto sm:w-auto">
           <button
             onClick={onNext}
             disabled={selectedKeys.size === 0 || !clientName.trim()}
             title={!clientName.trim() ? "Enter a client name first" : undefined}
-            className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.98] disabled:opacity-50"
+            className="w-full rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.98] disabled:opacity-50 sm:w-auto"
           >
             Next
           </button>
