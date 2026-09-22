@@ -50,10 +50,12 @@ export function buildRateCardCsv({
           li.mrp * li.quantity,
         ]);
       });
-      out.push(["", box.boxName, box.quantity, "", "(box cost)", "", "", "", box.boxCost]);
-      out.push(["", box.boxName, box.quantity, "", "(transport cost)", "", "", "", box.transportCost]);
-      for (const addOn of box.addOnSelections) {
-        out.push(["", box.boxName, box.quantity, "", `(${addOn.name})`, "", "", addOn.quantity, addOn.total]);
+      if (box.addOnSelections.length > 0) {
+        for (const addOn of box.addOnSelections) {
+          out.push(["", box.boxName, box.quantity, "", `Add-on: ${addOn.name}`, "", "", addOn.quantity, addOn.total]);
+        }
+      } else {
+        out.push(["", box.boxName, box.quantity, "", "No add-ons", "", "", "", ""]);
       }
     }
   } else {
@@ -78,10 +80,19 @@ export function buildRateCardCsv({
   const boxCostTotal = isHamper && boxInstances ? boxInstances.reduce((s, b) => s + b.boxCost, 0) : 0;
   const discountAmount = itemsSubtotal - applyDiscount(itemsSubtotal, discountPercent);
   const transportAmount = transportCostEnabled ? transportCostAmount : 0;
-  const addOnsTotal =
-    isHamper && boxInstances
-      ? boxInstances.reduce((sum, box) => sum + box.addOnSelections.reduce((s, a) => s + a.total, 0), 0)
-      : 0;
+  const addOnTotalsByName = new Map<string, { quantity: number; total: number }>();
+  if (isHamper && boxInstances) {
+    for (const box of boxInstances) {
+      for (const addOn of box.addOnSelections) {
+        const existing = addOnTotalsByName.get(addOn.name) ?? { quantity: 0, total: 0 };
+        addOnTotalsByName.set(addOn.name, {
+          quantity: existing.quantity + addOn.quantity,
+          total: existing.total + addOn.total,
+        });
+      }
+    }
+  }
+  const addOnsTotal = [...addOnTotalsByName.values()].reduce((sum, a) => sum + a.total, 0);
   const payable = itemsSubtotal - discountAmount + boxCostTotal + transportAmount + addOnsTotal;
 
   out.push([]);
@@ -94,10 +105,12 @@ export function buildRateCardCsv({
   );
   if (isHamper) {
     out.push(footerRow("Box cost", boxCostTotal));
-    out.push(footerRow("Add-ons", addOnsTotal));
   }
   if (transportCostEnabled) {
     out.push(footerRow("Transport cost", transportAmount));
+  }
+  for (const [name, a] of addOnTotalsByName) {
+    out.push(footerRow(`${name} (${a.quantity})`, a.total));
   }
   out.push(footerRow("Payable Amount", payable));
 

@@ -88,6 +88,7 @@ export async function buildRateCardExcel({
   let boxCostTotal = 0;
   let addOnsTotal = 0;
   let altToggle = false;
+  const addOnTotalsByName = new Map<string, { quantity: number; total: number }>();
 
   if (isHamper) {
     for (const box of boxInstances!) {
@@ -109,36 +110,31 @@ export async function buildRateCardExcel({
         altToggle = !altToggle;
       });
       boxCostTotal += box.boxCost;
-      const boxCostRow = sheet.addRow(["", box.boxName, box.quantity, "", "(box cost)", "", "", "", box.boxCost]);
-      styleDataRow(boxCostRow, altToggle);
-      altToggle = !altToggle;
-      const transportRow = sheet.addRow([
-        "",
-        box.boxName,
-        box.quantity,
-        "",
-        "(transport cost)",
-        "",
-        "",
-        "",
-        box.transportCost,
-      ]);
-      styleDataRow(transportRow, altToggle);
-      altToggle = !altToggle;
-      for (const addOn of box.addOnSelections) {
-        addOnsTotal += addOn.total;
-        const addOnRow = sheet.addRow([
-          "",
-          box.boxName,
-          box.quantity,
-          "",
-          `(${addOn.name})`,
-          "",
-          "",
-          addOn.quantity,
-          addOn.total,
-        ]);
-        styleDataRow(addOnRow, altToggle);
+      if (box.addOnSelections.length > 0) {
+        for (const addOn of box.addOnSelections) {
+          addOnsTotal += addOn.total;
+          const existing = addOnTotalsByName.get(addOn.name) ?? { quantity: 0, total: 0 };
+          addOnTotalsByName.set(addOn.name, {
+            quantity: existing.quantity + addOn.quantity,
+            total: existing.total + addOn.total,
+          });
+          const addOnRow = sheet.addRow([
+            "",
+            box.boxName,
+            box.quantity,
+            "",
+            `Add-on: ${addOn.name}`,
+            "",
+            "",
+            addOn.quantity,
+            addOn.total,
+          ]);
+          styleDataRow(addOnRow, altToggle);
+          altToggle = !altToggle;
+        }
+      } else {
+        const noAddOnRow = sheet.addRow(["", box.boxName, box.quantity, "", "No add-ons", "", "", "", ""]);
+        styleDataRow(noAddOnRow, altToggle);
         altToggle = !altToggle;
       }
     }
@@ -182,10 +178,12 @@ export async function buildRateCardExcel({
   );
   if (isHamper) {
     addFooterRow("Box cost", boxCostTotal);
-    addFooterRow("Add-ons", addOnsTotal);
   }
   if (transportCostEnabled) {
     addFooterRow("Transport cost", transportAmount);
+  }
+  for (const [name, a] of addOnTotalsByName) {
+    addFooterRow(`${name} (${a.quantity})`, a.total);
   }
   addFooterRow("Payable Amount", payable);
 

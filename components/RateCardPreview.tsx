@@ -92,9 +92,9 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
                 </span>
                 <span className="tabular-nums font-normal">
                   {box.quantity > 1 ? `${box.quantity}× · ` : ""}
-                  {formatINR(box.boxCost)} box &middot; {formatINR(box.transportCost)} transport
-                  {box.addOnSelections.length > 0 &&
-                    ` · ${box.addOnSelections.map((a) => `${a.name} ×${a.quantity}`).join(", ")}`}
+                  {box.addOnSelections.length > 0
+                    ? box.addOnSelections.map((a) => `${a.name} ×${a.quantity}`).join(", ")
+                    : "No add-ons"}
                 </span>
               </div>
               <table className="w-full border-collapse text-sm">
