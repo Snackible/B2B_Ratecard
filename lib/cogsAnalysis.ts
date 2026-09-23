@@ -4,8 +4,8 @@ import type { SelectedRow } from "./rows";
 import { applyDiscount } from "./rows";
 
 // Labour isn't broken out anywhere in the COGS sheet — given directly as a flat 3% of
-// selling price, applied on top of ingredient COGS. Only applied where ingredient COGS
-// is known, so an uncosted item never shows a misleading partial cost.
+// the total cost price (ingredient COGS), not of MRP/selling price. Only applied where
+// ingredient COGS is known, so an uncosted item never shows a misleading partial cost.
 export const LABOUR_COST_PERCENT = 3;
 
 export type CogsLineItem = {
@@ -49,7 +49,7 @@ function buildLineItem(
 ): CogsLineItem {
   const sellingTotal = applyDiscount(mrp, discountPercent) * quantity;
   const cogsTotal = cogsPerUnit != null ? cogsPerUnit * quantity : null;
-  const labourCost = cogsTotal != null ? (sellingTotal * LABOUR_COST_PERCENT) / 100 : null;
+  const labourCost = cogsTotal != null ? (cogsTotal * LABOUR_COST_PERCENT) / 100 : null;
   const marginTotal = cogsTotal != null && labourCost != null ? sellingTotal - cogsTotal - labourCost : null;
   const marginPercent = marginTotal != null && sellingTotal > 0 ? (marginTotal / sellingTotal) * 100 : null;
   return {
