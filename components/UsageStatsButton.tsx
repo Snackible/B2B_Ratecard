@@ -42,7 +42,7 @@ export default function UsageStatsButton() {
           <div
             role="dialog"
             aria-label="Usage stats"
-            className="animate-modal-in w-full max-w-md rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-5 shadow-xl"
+            className="animate-modal-in max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">

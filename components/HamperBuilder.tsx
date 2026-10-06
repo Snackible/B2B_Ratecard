@@ -345,7 +345,7 @@ export default function HamperBuilder({
                       {b.lineItems.length} item{b.lineItems.length === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
                       Qty
                       <input

@@ -19,7 +19,7 @@ function fingerprint(card: RateCardSnapshot): string {
   const boxes = (card.boxInstances ?? [])
     .map(
       (b) =>
-        `${b.boxId}x${b.quantity}[${lines(b.lineItems)}][${b.addOnSelections
+        `${b.boxId}x${b.quantity ?? 1}[${lines(b.lineItems ?? [])}][${(b.addOnSelections ?? [])
           .map((a) => `${a.addOnId}:${a.quantity}`)
           .sort()
           .join(",")}]`
@@ -61,7 +61,7 @@ export function computeUsageStats(cards: RateCardSnapshot[]): UsageStats {
       itemQty.set(li.name, (itemQty.get(li.name) ?? 0) + li.quantity);
     }
     for (const box of card.boxInstances ?? []) {
-      for (const li of box.lineItems) {
+      for (const li of box.lineItems ?? []) {
         itemQty.set(li.name, (itemQty.get(li.name) ?? 0) + li.quantity * (box.quantity ?? 1));
       }
     }

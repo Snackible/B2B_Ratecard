@@ -543,6 +543,8 @@ export async function getRateCard(id: string): Promise<RateCardSnapshot | null> 
     boxInstances: snapshot.boxInstances?.map((b) => ({
       ...b,
       quantity: b.quantity ?? 1,
+      boxCost: b.boxCost ?? 0,
+      transportCost: b.transportCost ?? 0,
       boxCostManual: b.boxCostManual ?? false,
       transportCostManual: b.transportCostManual ?? false,
       addOnSelections: (b.addOnSelections ?? []).map((a) => ({ ...a, perBox: a.perBox ?? true })),
