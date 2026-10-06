@@ -363,6 +363,30 @@ export async function listRateCards(): Promise<RateCardMeta[]> {
   return readLocalRateCardIndex();
 }
 
+async function readLocalSnapshots(): Promise<RateCardSnapshot[]> {
+  const index = await readLocalRateCardIndex();
+  const snaps = await Promise.all(index.map((m) => readLocalRateCard(m.id)));
+  return snaps.filter((s): s is RateCardSnapshot => s !== null);
+}
+
+// Full snapshots (line items + box instances, no image) — only for aggregate reporting.
+export async function listRateCardSnapshots(): Promise<RateCardSnapshot[]> {
+  if (!isDbConfigured) return readLocalSnapshots();
+  return readWithFallback(
+    async () => {
+      const collection = await ratecardsCollection();
+      const docs = await collection.find({}, { projection: { imageBase64: 0 } }).toArray();
+      return docs.map((d) => ({
+        ...withMetaDefaults(d as unknown as RateCardMeta),
+        lineItems: (d as unknown as RateCardSnapshot).lineItems ?? [],
+        boxInstances: (d as unknown as RateCardSnapshot).boxInstances,
+      }));
+    },
+    readLocalSnapshots,
+    "rate card snapshots"
+  );
+}
+
 function computeTotals(snapshot: {
   lineItems: RateCardSnapshot["lineItems"];
   boxInstances?: RateCardSnapshot["boxInstances"];

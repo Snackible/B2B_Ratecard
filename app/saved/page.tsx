@@ -3,6 +3,7 @@ import { listRateCards } from "@/lib/storage";
 import { formatINR } from "@/lib/rows";
 import DownloadRateCardButton from "@/components/DownloadRateCardButton";
 import DeleteRateCardButton from "@/components/DeleteRateCardButton";
+import UsageStatsButton from "@/components/UsageStatsButton";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,7 @@ export default async function SavedRateCardsPage() {
           })}
         </div>
       )}
+      {cards.length > 0 && <UsageStatsButton />}
     </div>
   );
 }
