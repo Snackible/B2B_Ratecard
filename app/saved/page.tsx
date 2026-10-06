@@ -65,7 +65,7 @@ export default async function SavedRateCardsPage() {
                     <span className="font-medium text-[var(--text-secondary)]">{formatINR(card.totalAmount)}</span>
                     <span aria-hidden>&middot;</span>
                     <span>
-                      {new Date(card.updatedAt ?? card.createdAt).toLocaleString("en-IN")}
+                      {new Date(card.updatedAt ?? card.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
                       {card.updatedAt ? " (edited)" : ""}
                     </span>
                   </div>
