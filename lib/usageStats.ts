@@ -69,8 +69,7 @@ export function computeUsageStats(cards: RateCardSnapshot[]): UsageStats {
 
   const topItems = [...itemQty.entries()]
     .map(([name, quantity]) => ({ name, quantity }))
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 8);
+    .sort((a, b) => b.quantity - a.quantity);
 
   return {
     totalCards: unique.length,

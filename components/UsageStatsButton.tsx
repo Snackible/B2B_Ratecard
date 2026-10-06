@@ -8,6 +8,7 @@ export default function UsageStatsButton() {
   const [open, setOpen] = useState(false);
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [error, setError] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   async function show() {
     setOpen(true);
@@ -80,14 +81,23 @@ export default function UsageStatsButton() {
                   {stats.topItems.length === 0 ? (
                     <p className="text-xs text-[var(--text-faint)]">No orders yet.</p>
                   ) : (
-                    <ol className="divide-y divide-[var(--panel-border)]">
-                      {stats.topItems.map((it) => (
+                    <ol className="max-h-72 divide-y divide-[var(--panel-border)] overflow-y-auto">
+                      {(showAll ? stats.topItems : stats.topItems.slice(0, 8)).map((it) => (
                         <li key={it.name} className="flex items-center justify-between gap-3 py-1.5">
                           <span className="min-w-0 flex-1 truncate text-[var(--text-secondary)]">{it.name}</span>
                           <span className="tabular-nums text-[var(--text-primary)]">{it.quantity}</span>
                         </li>
                       ))}
                     </ol>
+                  )}
+                  {stats.topItems.length > 8 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAll((v) => !v)}
+                      className="mt-1.5 text-xs font-medium text-[var(--accent)] hover:underline"
+                    >
+                      {showAll ? "Show less" : `More (${stats.topItems.length - 8})`}
+                    </button>
                   )}
                 </div>
 
