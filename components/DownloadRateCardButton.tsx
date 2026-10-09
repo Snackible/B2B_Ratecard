@@ -58,7 +58,7 @@ export default function DownloadRateCardButton({ id, filename }: { id: string; f
     let cancelled = false;
     (async () => {
       try {
-        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise((r) => setTimeout(r, 100));
         if (cancelled || !cardRef.current) return;
         const dataUrl = await toJpeg(cardRef.current, { quality: 0.95, backgroundColor: "#ffffff", pixelRatio: 2 });
         const a = document.createElement("a");
