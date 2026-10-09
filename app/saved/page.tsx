@@ -71,7 +71,7 @@ export default async function SavedRateCardsPage() {
                   </div>
                 </div>
                 <div className="flex w-full shrink-0 items-center gap-3 text-xs font-medium sm:w-auto">
-                  <DownloadRateCardButton imageUrl={card.imageUrl} filename={filename} />
+                  <DownloadRateCardButton id={card.id} filename={filename} />
                   <Link href={`/?edit=${card.id}`} className="text-[var(--text-secondary)] hover:text-[var(--accent)]">
                     Edit
                   </Link>

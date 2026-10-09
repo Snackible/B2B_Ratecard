@@ -109,7 +109,6 @@ export type RateCardMeta = {
   totalAmount: number;
   createdAt: string;
   updatedAt?: string;
-  imageUrl: string;
 };
 
 export type RateCardSnapshot = RateCardMeta & {

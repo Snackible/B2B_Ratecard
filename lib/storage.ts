@@ -317,7 +317,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 
 // Backfills fields introduced after some rate cards were already saved, so old
 // history entries keep loading instead of rendering as bulk/hamper hybrids.
-function withMetaDefaults(meta: Partial<RateCardMeta> & Pick<RateCardMeta, "id" | "createdAt" | "imageUrl">): RateCardMeta {
+function withMetaDefaults(meta: Partial<RateCardMeta> & Pick<RateCardMeta, "id" | "createdAt">): RateCardMeta {
   return {
     orderType: "bulk",
     clientName: null,
@@ -333,6 +333,8 @@ function withMetaDefaults(meta: Partial<RateCardMeta> & Pick<RateCardMeta, "id" 
   };
 }
 
+// Older cards may still carry a stored thumbnail (imageBase64); new cards never do — the
+// image is redrawn from the saved data on download.
 type RateCardDoc = RateCardSnapshot & { _id: string; imageBase64?: string };
 
 function ratecardsCollection() {
@@ -411,7 +413,6 @@ function computeTotals(snapshot: {
 function buildMeta(
   id: string,
   createdAt: string,
-  imageUrl: string,
   itemCount: number,
   totalAmount: number,
   snapshot: {
@@ -438,30 +439,25 @@ function buildMeta(
     itemCount,
     totalAmount,
     createdAt,
-    imageUrl,
   };
 }
 
 export async function saveRateCard(
-  snapshot: Omit<RateCardSnapshot, "id" | "createdAt" | "imageUrl" | "itemCount" | "totalAmount">,
-  imageDataUrl: string
+  snapshot: Omit<RateCardSnapshot, "id" | "createdAt" | "itemCount" | "totalAmount">
 ): Promise<RateCardMeta> {
   const id = randomUUID();
   const createdAt = new Date().toISOString();
   const { itemCount, totalAmount } = computeTotals(snapshot);
-  const base64 = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
-  const imageUrl = `/api/ratecards/${id}/image`;
-  const fullSnapshot: RateCardSnapshot = { ...snapshot, id, createdAt, imageUrl, itemCount, totalAmount };
-  const meta = buildMeta(id, createdAt, imageUrl, itemCount, totalAmount, snapshot);
+  const fullSnapshot: RateCardSnapshot = { ...snapshot, id, createdAt, itemCount, totalAmount };
+  const meta = buildMeta(id, createdAt, itemCount, totalAmount, snapshot);
 
   if (isDbConfigured) {
     const collection = await ratecardsCollection();
-    await collection.insertOne({ _id: id, ...fullSnapshot, imageBase64: base64 });
+    await collection.insertOne({ _id: id, ...fullSnapshot });
     return meta;
   }
 
   await fs.mkdir(LOCAL_RATECARDS_DIR, { recursive: true });
-  await fs.writeFile(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`), Buffer.from(base64, "base64"));
   await writeJsonFile(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), fullSnapshot);
 
   const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
@@ -472,29 +468,26 @@ export async function saveRateCard(
 
 export async function updateRateCard(
   id: string,
-  snapshot: Omit<RateCardSnapshot, "id" | "createdAt" | "updatedAt" | "imageUrl" | "itemCount" | "totalAmount">,
-  imageDataUrl: string
+  snapshot: Omit<RateCardSnapshot, "id" | "createdAt" | "updatedAt" | "itemCount" | "totalAmount">
 ): Promise<RateCardMeta | null> {
   const existing = await getRateCard(id);
   if (!existing) return null;
 
   const updatedAt = new Date().toISOString();
   const { itemCount, totalAmount } = computeTotals(snapshot);
-  const base64 = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
 
   const meta: RateCardMeta = {
-    ...buildMeta(id, existing.createdAt, existing.imageUrl, itemCount, totalAmount, snapshot),
+    ...buildMeta(id, existing.createdAt, itemCount, totalAmount, snapshot),
     updatedAt,
   };
   const fullSnapshot: RateCardSnapshot = { ...snapshot, ...meta };
 
   if (isDbConfigured) {
     const collection = await ratecardsCollection();
-    await collection.replaceOne({ _id: id }, { ...fullSnapshot, imageBase64: base64 });
+    await collection.replaceOne({ _id: id }, { ...fullSnapshot });
     return meta;
   }
 
-  await fs.writeFile(path.join(LOCAL_RATECARDS_DIR, `${id}.jpg`), Buffer.from(base64, "base64"));
   await writeJsonFile(path.join(LOCAL_RATECARDS_DIR, `${id}.json`), fullSnapshot);
   const index = await readJsonFile<RateCardMeta[]>(LOCAL_INDEX, []);
   await writeJsonFile(

@@ -20,6 +20,8 @@ type Props = {
   boxInstances?: HamperBoxInstance[];
   transportCostEnabled?: boolean;
   transportCostAmount?: number;
+  /** Overrides today's date, e.g. when redrawing an old saved card with its original date. */
+  dateLabel?: string;
 };
 
 const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPreview(
@@ -35,14 +37,17 @@ const RateCardPreview = forwardRef<HTMLDivElement, Props>(function RateCardPrevi
     boxInstances,
     transportCostEnabled,
     transportCostAmount,
+    dateLabel,
   },
   ref
 ) {
-  const today = new Date().toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const today =
+    dateLabel ??
+    new Date().toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
 
   const { subtotal, discountAmount, boxCostTotal, transportAmount, addOnTotalsByName, payableAmount } =
     computePricing({ rows, boxInstances, discountPercent, transportCostEnabled, transportCostAmount });

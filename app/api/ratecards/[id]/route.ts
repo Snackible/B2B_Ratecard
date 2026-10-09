@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteRateCard, updateRateCard } from "@/lib/storage";
+import { deleteRateCard, getRateCard, updateRateCard } from "@/lib/storage";
 import type { HamperBoxInstance, OrderType, RateCardLineItem } from "@/lib/types";
 
 type UpdateBody = {
@@ -13,8 +13,14 @@ type UpdateBody = {
   addOnsCostTotal: number;
   lineItems: RateCardLineItem[];
   boxInstances?: HamperBoxInstance[];
-  imageDataUrl: string;
 };
+
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const card = await getRateCard(id);
+  if (!card) return NextResponse.json({ error: "Rate card not found" }, { status: 404 });
+  return NextResponse.json(card);
+}
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,9 +31,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!hasLineItems && !hasBoxes) {
     return NextResponse.json({ error: "At least one item is required" }, { status: 400 });
   }
-  if (typeof body.imageDataUrl !== "string" || !body.imageDataUrl.startsWith("data:image/")) {
-    return NextResponse.json({ error: "Missing rendered image" }, { status: 400 });
-  }
   if (typeof body.discountPercent !== "number") {
     return NextResponse.json({ error: "Missing discount" }, { status: 400 });
   }
@@ -35,22 +38,18 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ error: "Invalid order type" }, { status: 400 });
   }
 
-  const meta = await updateRateCard(
-    id,
-    {
-      orderType: body.orderType,
-      clientName: body.clientName ?? null,
-      showClientName: Boolean(body.showClientName),
-      discountPercent: body.discountPercent,
-      transportCostEnabled: Boolean(body.transportCostEnabled),
-      transportCostAmount: typeof body.transportCostAmount === "number" ? body.transportCostAmount : 0,
-      boxCostTotal: typeof body.boxCostTotal === "number" ? body.boxCostTotal : 0,
-      addOnsCostTotal: typeof body.addOnsCostTotal === "number" ? body.addOnsCostTotal : 0,
-      lineItems: body.lineItems ?? [],
-      boxInstances: body.boxInstances,
-    },
-    body.imageDataUrl
-  );
+  const meta = await updateRateCard(id, {
+    orderType: body.orderType,
+    clientName: body.clientName ?? null,
+    showClientName: Boolean(body.showClientName),
+    discountPercent: body.discountPercent,
+    transportCostEnabled: Boolean(body.transportCostEnabled),
+    transportCostAmount: typeof body.transportCostAmount === "number" ? body.transportCostAmount : 0,
+    boxCostTotal: typeof body.boxCostTotal === "number" ? body.boxCostTotal : 0,
+    addOnsCostTotal: typeof body.addOnsCostTotal === "number" ? body.addOnsCostTotal : 0,
+    lineItems: body.lineItems ?? [],
+    boxInstances: body.boxInstances,
+  });
 
   if (!meta) return NextResponse.json({ error: "Rate card not found" }, { status: 404 });
   return NextResponse.json(meta);
