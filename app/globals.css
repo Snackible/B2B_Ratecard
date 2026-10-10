@@ -138,7 +138,7 @@ main > * {
 }
 
 /* Primary action buttons become soft pills with a lit top edge and a physical press. */
-button[class*="bg-[var(--accent)]"]:not([class*="rounded-full"]) {
+button[class*="bg-[var(--accent)]"]:not([class*="rounded-full"]):not([class*="rounded-l-"]):not([class*="rounded-r-"]) {
   border-radius: 9999px;
 }
 button[class*="bg-[var(--accent)]"]:not(:disabled):active {

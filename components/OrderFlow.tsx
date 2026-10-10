@@ -659,7 +659,7 @@ export default function OrderFlow({
                   onClick={handleDownloadExcel}
                   disabled={busy || !clientName.trim()}
                   title={!clientName.trim() ? "Enter a client name first" : undefined}
-                  className="rounded-l-md bg-[var(--accent)] px-3.5 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
+                  className="rounded-l-full bg-[var(--accent)] py-1.5 pr-3 pl-4 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
                 >
                   {busy ? "Saving..." : editId ? "Update & Download Excel" : "Save & Download Excel"}
                 </button>
@@ -673,7 +673,7 @@ export default function OrderFlow({
                     onClick={() => setShowDownloadMenu((v) => !v)}
                     disabled={busy || !clientName.trim()}
                     aria-label="Other download formats"
-                    className="h-full rounded-r-md border-l border-[var(--accent-fg)]/20 bg-[var(--accent)] px-2 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
+                    className="h-full rounded-r-full border-l border-[var(--accent-fg)]/20 bg-[var(--accent)] py-1.5 pr-2.5 pl-2 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
                   >
                     <span aria-hidden>▾</span>
                   </button>
@@ -725,7 +725,7 @@ export default function OrderFlow({
                 <button
                   onClick={handleDownloadCogsExcel}
                   disabled={cogsBusy}
-                  className="rounded-l-md bg-[var(--accent)] px-3.5 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
+                  className="rounded-l-full bg-[var(--accent)] py-1.5 pr-3 pl-4 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
                 >
                   {cogsBusy ? "Working..." : "Download Excel"}
                 </button>
@@ -739,7 +739,7 @@ export default function OrderFlow({
                     onClick={() => setShowCogsDownloadMenu((v) => !v)}
                     disabled={cogsBusy}
                     aria-label="Other download formats"
-                    className="h-full rounded-r-md border-l border-[var(--accent-fg)]/20 bg-[var(--accent)] px-2 py-1.5 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
+                    className="h-full rounded-r-full border-l border-[var(--accent-fg)]/20 bg-[var(--accent)] py-1.5 pr-2.5 pl-2 text-xs font-medium text-[var(--accent-fg)] hover:bg-[var(--accent-hover)] active:scale-[0.97] disabled:opacity-50"
                   >
                     <span aria-hidden>▾</span>
                   </button>
