@@ -32,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {themeInitScript}
         </Script>
         <Nav />
-        <main className="mx-auto w-full min-w-0 max-w-[1400px] flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        <main className="mx-auto w-full min-w-0 max-w-[1400px] flex-1 px-4 py-8 sm:px-6 sm:py-12">{children}</main>
       </body>
     </html>
   );

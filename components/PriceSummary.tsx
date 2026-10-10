@@ -90,7 +90,7 @@ export default function PriceSummary({
                                 Math.max(1, Number(e.target.value) || 1)
                               )
                             }
-                            className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs tabular-nums text-[var(--text-primary)]"
+                            className="w-12 shrink-0 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-center text-xs tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                           />
                         ) : (
                           <span className="tabular-nums whitespace-nowrap text-[var(--text-muted)]">
@@ -106,7 +106,7 @@ export default function PriceSummary({
                             onClick={() => onLineItemRemove(box.key, li.itemId)}
                             title="Remove from box"
                             aria-label={`Remove ${li.name} from ${box.boxName}`}
-                            className="shrink-0 px-1 text-[var(--text-faint)] hover:text-red-500"
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--text-faint)] hover:bg-red-500/10 hover:text-red-500"
                           >
                             ✕
                           </button>
@@ -181,7 +181,7 @@ export default function PriceSummary({
             {rows.map((row) => (
               <div
                 key={row.key}
-                className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 hover:bg-[var(--input-bg)]"
+                className="-mx-4 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2 hover:bg-[var(--input-bg)]"
               >
                 <span className="min-w-0 flex-1 basis-full truncate pr-2 text-[var(--text-secondary)] sm:basis-auto">
                   {row.name}
@@ -196,7 +196,7 @@ export default function PriceSummary({
                       min={1}
                       value={row.quantity}
                       onChange={(e) => onQuantityChange(row.key, Math.max(1, Number(e.target.value) || 1))}
-                      className="w-14 shrink-0 rounded border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-right text-xs tabular-nums text-[var(--text-primary)]"
+                      className="w-12 shrink-0 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] px-1 py-0.5 text-center text-xs tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                     />
                   ) : (
                     <span className="tabular-nums whitespace-nowrap text-[var(--text-muted)]">×{row.quantity}</span>
@@ -210,7 +210,7 @@ export default function PriceSummary({
                       onClick={() => onRemove(row.key)}
                       title="Remove from rate card"
                       aria-label={`Remove ${row.name} from rate card`}
-                      className="shrink-0 px-1 text-[var(--text-faint)] hover:text-red-500"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--text-faint)] hover:bg-red-500/10 hover:text-red-500"
                     >
                       ✕
                     </button>
@@ -226,9 +226,16 @@ export default function PriceSummary({
         <SummaryRow label="Subtotal" value={formatINR(subtotal)} />
         {showTotals && (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
-              <DiscountPicker value={discountPercent} onChange={onDiscountChange} hideLabel />
-              <span className="tabular-nums font-semibold text-[var(--text-primary)]">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2.5">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+                <span className="text-[var(--text-secondary)]">Discount</span>
+                <DiscountPicker value={discountPercent} onChange={onDiscountChange} hideLabel />
+              </div>
+              <span
+                className={`tabular-nums font-semibold ${
+                  discountAmount > 0 ? "text-[var(--accent-soft-fg)]" : "text-[var(--text-faint)]"
+                }`}
+              >
                 {formatINR(discountAmount > 0 ? -discountAmount : 0)}
               </span>
             </div>

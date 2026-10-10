@@ -12,7 +12,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`rounded-md px-3 py-1.5 transition-colors ${
+      className={`rounded-full px-4 py-1.5 transition-colors ${
         isActive
           ? "bg-[var(--accent-soft-bg)] text-[var(--accent-soft-fg)]"
           : "hover:bg-[var(--input-bg)] hover:text-[var(--text-primary)]"
@@ -25,9 +25,9 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 
 export default function Nav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--panel-border)] bg-[var(--panel-bg)]/85 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3.5 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 text-[17px] font-semibold tracking-tight text-[var(--text-primary)]">
+    <header className="sticky top-3 z-40 px-3 sm:px-6">
+      <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[1.75rem] border border-[var(--panel-border)] bg-[var(--panel-bg)]/75 px-4 py-2.5 shadow-md backdrop-blur-xl sm:rounded-full sm:py-2 sm:pr-3 sm:pl-5">
+        <Link href="/" className="order-1 flex items-center gap-2 text-[17px] font-semibold tracking-tight text-[var(--text-primary)]">
           <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden className="shrink-0 drop-shadow-sm">
             <defs>
               <linearGradient id="brand-mark" x1="0" y1="0" x2="0" y2="1">
@@ -45,13 +45,13 @@ export default function Nav() {
           Snackible
           <span className="text-sm font-normal text-[var(--text-muted)]">Rate Card</span>
         </Link>
-        <nav className="flex flex-wrap items-center gap-x-1 gap-y-2 text-sm font-medium text-[var(--text-secondary)]">
+        <nav className="order-3 flex w-full flex-wrap items-center gap-x-1 gap-y-2 text-sm font-medium text-[var(--text-secondary)] sm:order-2 sm:ml-auto sm:w-auto">
           <NavLink href="/">Create Rate Card</NavLink>
           <NavLink href="/saved">Saved Rate Cards</NavLink>
-          <div className="ml-2 border-l border-[var(--panel-border)] pl-2">
-            <ThemeToggle />
-          </div>
-        </nav>
+          </nav>
+        <div className="order-2 sm:order-3 sm:ml-1 sm:border-l sm:border-[var(--panel-border)] sm:pl-2">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

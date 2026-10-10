@@ -4,12 +4,15 @@ import type { OrderType } from "@/lib/types";
 
 export default function OrderTypeSelect({ onSelect }: { onSelect: (type: OrderType) => void }) {
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-4xl flex-col items-center justify-center px-4 py-16 text-center">
-      <h1 className="text-3xl font-semibold tracking-tight text-balance text-[var(--text-primary)] sm:text-4xl">
+    <div className="mx-auto flex min-h-[60dvh] max-w-4xl flex-col items-center justify-center px-2 py-10 text-center sm:py-16">
+      <span className="rounded-full border border-[var(--panel-border)] bg-[var(--panel-bg)]/70 px-3 py-1 text-[10px] font-medium tracking-[0.2em] text-[var(--text-muted)] uppercase">
+        New rate card
+      </span>
+      <h1 className="mt-5 max-w-2xl text-4xl font-semibold tracking-tight text-balance text-[var(--text-primary)] sm:text-5xl sm:leading-[1.05]">
         Choose an order type to start pricing.
       </h1>
 
-      <div className="mt-12 grid w-full grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="mt-12 grid w-full grid-cols-1 gap-5 sm:mt-14 sm:grid-cols-2 sm:gap-6">
         <OptionCard
           title="Bulk Order"
           description="Flat catalog priced by segment — Standard Grammage, One Serving Pack, Large Grammage."
@@ -49,19 +52,28 @@ function OptionCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex flex-col items-start gap-4 overflow-hidden rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-9 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[0_20px_40px_-15px_var(--accent-shadow)] active:translate-y-0 active:scale-[0.99]"
+      className="group rounded-[2rem] border border-[var(--panel-border)] bg-[var(--panel-border)]/40 p-1.5 text-left transition-all duration-700 hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] sm:p-2"
     >
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-soft-bg)] text-[var(--accent-soft-fg)] transition-colors duration-300 group-hover:bg-[var(--accent)] group-hover:text-[var(--accent-fg)]">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          {icon}
-        </svg>
+      <div className="flex h-full min-h-[15rem] flex-col items-start gap-4 rounded-[calc(2rem-0.375rem)] bg-[var(--panel-bg)] p-7 shadow-sm sm:min-h-[17rem] sm:rounded-[calc(2rem-0.5rem)] sm:p-9">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-soft-bg)] text-[var(--accent-soft-fg)] transition-all duration-700 group-hover:bg-[var(--accent)] group-hover:text-[var(--accent-fg)]">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            {icon}
+          </svg>
+        </div>
+        <div className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">{title}</div>
+        <p className="max-w-xs text-sm leading-relaxed text-[var(--text-secondary)]">{description}</p>
+        <span className="mt-auto flex items-center gap-3 pt-2 text-sm font-medium text-[var(--text-primary)]">
+          Get started
+          <span
+            aria-hidden
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-soft-bg)] text-[var(--accent-soft-fg)] transition-all duration-700 group-hover:translate-x-1 group-hover:-translate-y-px group-hover:scale-105 group-hover:bg-[var(--accent)] group-hover:text-[var(--accent-fg)]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17 17 7M8 7h9v9" />
+            </svg>
+          </span>
+        </span>
       </div>
-      <div className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">{title}</div>
-      <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{description}</p>
-      <span className="mt-2 flex items-center gap-1 text-sm font-medium text-[var(--accent)] opacity-0 transition-all duration-300 group-hover:translate-x-0.5 group-hover:opacity-100">
-        Get started
-        <span aria-hidden>&rarr;</span>
-      </span>
     </button>
   );
 }

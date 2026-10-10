@@ -28,6 +28,11 @@
   --secondary-soft-bg: #fdeee0;
 
   --danger: #d64545;
+
+  --shadow-tint: rgb(74 52 24 / 0.07);
+  --shadow-tint-strong: rgb(74 52 24 / 0.12);
+  --hairline-inner: rgb(255 255 255 / 0.9);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 :root.dark {
@@ -56,6 +61,10 @@
   --secondary-soft-bg: #1b2e22;
 
   --danger: #e5787a;
+
+  --shadow-tint: rgb(0 0 0 / 0.35);
+  --shadow-tint-strong: rgb(0 0 0 / 0.5);
+  --hairline-inner: rgb(255 255 255 / 0.05);
 }
 
 @theme inline {
@@ -63,6 +72,13 @@
   --color-panel-bg: var(--panel-bg);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+  --shadow-sm: 0 1px 2px var(--shadow-tint), 0 4px 14px -8px var(--shadow-tint);
+  --shadow-md: inset 0 1px 0 var(--hairline-inner), 0 2px 4px var(--shadow-tint), 0 18px 40px -18px var(--shadow-tint-strong);
+  --shadow-xl: inset 0 1px 0 var(--hairline-inner), 0 4px 10px var(--shadow-tint), 0 30px 60px -24px var(--shadow-tint-strong);
+  --default-transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 body {
@@ -73,8 +89,60 @@ body {
 
 * {
   transition-property: color, background-color, border-color, box-shadow, transform;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
+  transition-duration: 220ms;
+  transition-timing-function: var(--ease-spring);
+}
+
+/* Fixed, click-through film grain — gives the cream background a physical paper feel. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+:root.dark body::before {
+  opacity: 0.06;
+  mix-blend-mode: screen;
+}
+
+/* Soft ambient glow behind the page so panels float on something instead of flat color. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgb(31 107 58 / 0.07), transparent 60%),
+    radial-gradient(50rem 36rem at -10% 10%, rgb(232 87 28 / 0.05), transparent 60%);
+}
+:root.dark body::after {
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgb(63 174 95 / 0.08), transparent 60%),
+    radial-gradient(50rem 36rem at -10% 10%, rgb(63 174 95 / 0.04), transparent 60%);
+}
+/* Heavy, gentle fade-up for whatever a page renders. Only "from" is defined so no
+   transform is left behind afterwards (a lingering transform would trap fixed modals). */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(6px);
+  }
+}
+main > * {
+  animation: reveal-up 750ms var(--ease-spring) backwards;
+}
+
+/* Primary action buttons become soft pills with a lit top edge and a physical press. */
+button[class*="bg-[var(--accent)]"]:not([class*="rounded-full"]) {
+  border-radius: 9999px;
+}
+button[class*="bg-[var(--accent)]"]:not(:disabled):active {
+  transform: scale(0.97);
 }
 
 ::selection {

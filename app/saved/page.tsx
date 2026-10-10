@@ -12,8 +12,11 @@ export default async function SavedRateCardsPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">Saved Rate Cards</h1>
-      <p className="mb-5 text-sm text-[var(--text-muted)]">
+      <span className="rounded-full border border-[var(--panel-border)] bg-[var(--panel-bg)]/70 px-3 py-1 text-[10px] font-medium tracking-[0.2em] text-[var(--text-muted)] uppercase">
+        History
+      </span>
+      <h1 className="mt-3 mb-1 text-3xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-4xl">Saved Rate Cards</h1>
+      <p className="mb-7 text-sm text-[var(--text-muted)]">
         {cards.length > 0
           ? `${cards.length} rate card${cards.length === 1 ? "" : "s"} saved`
           : "Rate cards you save will show up here."}
@@ -35,7 +38,8 @@ export default async function SavedRateCardsPage() {
           </Link>
         </div>
       ) : (
-        <div className="divide-y divide-[var(--panel-border)] overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] shadow-sm">
+        <div className="rounded-[2rem] border border-[var(--panel-border)] bg-[var(--panel-border)]/40 p-1.5 sm:p-2">
+        <div className="divide-y divide-[var(--panel-border)] overflow-hidden rounded-[calc(2rem-0.375rem)] bg-[var(--panel-bg)] shadow-sm sm:rounded-[calc(2rem-0.5rem)]">
           {cards.map((card) => {
             const displayName = card.clientName?.trim() || "Untitled rate card";
             const filename = `${displayName.replace(/\s+/g, "-").toLowerCase()}.jpg`;
@@ -83,6 +87,7 @@ export default async function SavedRateCardsPage() {
               </div>
             );
           })}
+        </div>
         </div>
       )}
       {cards.length > 0 && <UsageStatsButton />}
